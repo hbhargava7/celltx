@@ -1,4 +1,6 @@
+from warnings import warn
 import networkx as nx
+
 
 class Model():
 
@@ -79,6 +81,15 @@ class Model():
 	def link_states(self, a, b, function):
 		# I think that a can select multiple entities but b has to select single entities.
 		self.state_linkages.append((a,b, function))
+
+	def add_migration_linkages(self):
+		for celltype in self.celltypes:
+			for state in self.celltypes[celltype]:
+				# state looks like ['state1', 'state2', ...]
+				
+				
+				stateName = state[0]
+				stateVal = 
 
 	### EDGE FUNCTIONS
 	def edge_func_peg(self, x, name):
@@ -179,7 +190,7 @@ class Model():
 			# cell_state selectors have: type, celltype, state
 			# state is an array of tuples like: [('primed',1), ('activated',0)]
 			for entity in self.entities:
-				if entity['type'] = 'cell_state':
+				if entity['type'] == 'cell_state':
 					if entity['celltype'] == selector['celltype']:
 						if self.compare_circuitry_states(entity['cstate'], selector['state']):
 							results.append(entity)
