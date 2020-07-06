@@ -1,6 +1,8 @@
 from warnings import warn
 import networkx as nx
-
+from . import biolayer
+# from . import syslayer
+# from . import graphlayer
 
 class Model():
 
@@ -8,6 +10,8 @@ class Model():
 	def __init__(self, name):
 		self.name = name
 		
+		self.bio = biolayer.BioLayer(self)
+
 		self.compartments = {} # unique compartment names
 		self.compartment_linkages = [] # tuples
 		self.celltypes = {} # celltypes and states
@@ -89,7 +93,7 @@ class Model():
 				
 				
 				stateName = state[0]
-				stateVal = 
+				# stateVal = 
 
 	### EDGE FUNCTIONS
 	def edge_func_peg(self, x, name):
