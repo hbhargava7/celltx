@@ -2,7 +2,7 @@ from warnings import warn
 import networkx as nx
 from . import biolayer
 from . import syslayer
-# from . import graphlayer
+from . import graphlayer
 
 class Model():
 
@@ -12,8 +12,12 @@ class Model():
 		
 		self.bio = biolayer.BioLayer()
 		self.sys = syslayer.SysLayer()
-
+		self.graph = graphlayer.GraphLayer()
+		
 		print("Model \"%s\" Instantiated." % self.name)
+
+	def compose_biolayer(self):
+		self.sys = self.bio.compose()
 
 	def compartment_graph(self):
 		G = nx.Graph()

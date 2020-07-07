@@ -1,3 +1,4 @@
+from .. import graphlayer
 
 class SysLayer():
 
@@ -7,13 +8,14 @@ class SysLayer():
 		self.elements = []
 		self.relationships = []
 
-	def add_element(self, name, compartment=None, state=None):
+	def add_element(self, kind, name, compartment=None, states=None):
 		e = {}
+		e['type'] = kind
 		e['name'] = 'name'
 		if (compartment):
 			e['compartment'] = compartment
 		if (state):
-			e['state'] = state
+			e['states'] = state
 
 		self.elements.append(e)
 
@@ -33,4 +35,6 @@ class SysLayer():
 		self.relationships.append(r)
 
 	def compose(self):
-		return
+		graph = graphlayer.GraphLayer()
+
+		return graph

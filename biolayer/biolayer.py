@@ -1,3 +1,4 @@
+from .. import syslayer
 
 class BioLayer():
 
@@ -57,6 +58,11 @@ class BioLayer():
 		c['name'] = name
 		c['states'] = states
 		self.tx_cells.append(c)
+
+	def add_cytokine(self, name):
+		c = {}
+		c['name'] = name
+		self.cytokines.append(c)
 
 	def get_tx_cellstate(self, name, state):
 		cs = {}
@@ -119,11 +125,47 @@ class BioLayer():
 		return f
 
 	def compose(self):
-		return
+		# Generate a system layer from this biology layer
+		sys = syslayer.SysLayer()
+
+		### Passthrough the compartments
+		sys.compartments = self.compartments
+		sys.compartment_linkages = self.compartment_linkages
+
+		### Create elements corresponding to the tx cells
+		for tx in self.tx_cells:
+			sys.add_element(kind='tx_cell', name=tx['name'], states=tx['states'])
+
+		for cell in self.cells:
+			sys.add_element(kind='cell', name=cell['name'], compartment=cell['compartment'], )
+
+		for cytokine in self.cytokines:
+			sys.add_element(kind='cytokine', name=cytokine['name'])
+		
+		### Add linkages
+		## tx cell linkages:
+		# proliferation
+		# death
+		# migration
+		# state changes
+		# killing
+		# cytokine synthesis
+
+		## cell linkages:
+		# proliferation
+		# death
+
+		## cytokines
+		# degradation
+
+		return sys
+
 		# convert the specifications into a syslayer
 
 		# first create all of the elements
-		
+		# for 
+
+
 		# then, create all of the relationships
 
 
