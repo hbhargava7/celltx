@@ -10,8 +10,8 @@ class Model():
 	def __init__(self, name):
 		self.name = name
 		
-		self.bio = biolayer.BioLayer(self)
-		self.sys = syslayer.SysLayer(self)
+		self.bio = biolayer.BioLayer()
+		self.sys = syslayer.SysLayer()
 
 		print("Model \"%s\" Instantiated." % self.name)
 

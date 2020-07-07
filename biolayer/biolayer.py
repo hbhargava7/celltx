@@ -1,9 +1,7 @@
 
 class BioLayer():
 
-	def __init__(self, model):
-		self.model = model
-
+	def __init__(self):
 		self.compartments = [] # unique compartment names
 		self.compartment_linkages = [] # tuples of compartment names
 
@@ -22,6 +20,10 @@ class BioLayer():
 		# 'name' : name
 
 		self.tx_state_linkages = []
+		# tx cell state linkages represented as dictionaries with:
+		# 'a' : state selector
+		# 'b' : state selector
+		# 'func' : function placeholder
 
 		self.interactions = []
 		# interactions between 

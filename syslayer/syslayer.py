@@ -1,8 +1,7 @@
 
 class SysLayer():
 
-	def __init__(self, model):
-		self.model = model
+	def __init__(self):
 		self.compartments = []
 		self.compartment_linkages = []
 		self.elements = []
