@@ -1,7 +1,7 @@
 from warnings import warn
 import networkx as nx
 from . import biolayer
-# from . import syslayer
+from . import syslayer
 # from . import graphlayer
 
 class Model():
@@ -11,23 +11,9 @@ class Model():
 		self.name = name
 		
 		self.bio = biolayer.BioLayer(self)
-
-		self.compartments = {} # unique compartment names
-		self.compartment_linkages = [] # tuples
-		self.celltypes = {} # celltypes and states
-
-		self.state_linkages = [] # tuples linking generalized states
+		self.sys = syslayer.SysLayer(self)
 
 		print("Model \"%s\" Instantiated." % self.name)
-
-	### COMPARTMENTS
-	def add_compartment(self, name):
-		if name in self.compartments:
-			raise ValueError("compartments must have unique names")
-		self.compartments[name] = []
-
-	def link_compartments(self, a, b):
-		self.compartment_linkages.append((a,b))
 
 	def compartment_graph(self):
 		G = nx.Graph()

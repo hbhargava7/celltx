@@ -117,28 +117,12 @@ class BioLayer():
 		return f
 
 	def compose(self):
+		return
 		# convert the specifications into a syslayer
 
-
-	# # tx_celltype_selector
-	# {
-
-	# 	'from' : {
-	# 		'name' : name_of_tx_celltype
-	# 		'state' : [(statename1, 0), ...]
-	# 	},
-	# 	'to' : {
-	# 		'name' : name_of_tx_celltype
-	# 		'state' : [(statename1, 0), ...]
-	# 	},
-	# 	'function' : {
-	# 		'type' : 'hill'
-	# 	}
-
-
-	# }
-
-
+		# first create all of the elements
+		
+		# then, create all of the relationships
 
 
 
