@@ -40,7 +40,8 @@ class BioLayer():
 		# function is an expression in terms of tx_cells, cells, or cytokines
 		# function is in terms of selectors with no compartment; interpreter
 		# will fill in the compartment when generating the interactions
-		
+	
+	### Adding Elements
 	def add_compartment(self, name):
 		self.compartments.append(name)
 
@@ -64,13 +65,19 @@ class BioLayer():
 		c['name'] = name
 		self.cytokines.append(c)
 
+	# Getters
+	def get_tx_celltype(self, name):
+		cs = {}
+		cs['type'] = 'tx_celltype'
+		cs['name'] = name
+
 	def get_tx_cellstate(self, name, state):
 		cs = {}
 		cs['type'] = 'tx_cellstate'
 		cs['name'] = name
 		cs['state'] = state
 		return cs
-
+	
 	def get_cells(self, name, compartment=None):
 		cs = {}
 		cs['type'] = 'cells'
@@ -87,19 +94,30 @@ class BioLayer():
 			cs['compartment'] = compartment
 		return cs
 
-	def arithmetic(self, operation, selectors):
-		cs = {}
-		cs['type'] = 'arithmetic'
-		cs['operation'] = operation
-		cs['selectors'] = selectors
-		return cs
-
+	# Linkage Specifiers
 	def add_tx_state_linkage(self, a, b, func):
 		csl = {}
 		csl['a'] = a
 		csl['b'] = b
 		csl['func'] = func
 		self.tx_state_linkages.append(csl)
+
+	def add_tx_cell_killtarget(tx, target):
+		return
+
+	def add_tx_cellprolif(daughter_state):
+		return
+
+	def add_tx_cytokine_interaction(tx, target, states, action):
+		return
+
+	# Linkage Helpers
+	def arithmetic(self, operation, selectors):
+		cs = {}
+		cs['type'] = 'arithmetic'
+		cs['operation'] = operation
+		cs['selectors'] = selectors
+		return cs
 
 	def func(self, terms):
 		# Function of n terms where f = n[0]*n[1]
@@ -124,6 +142,7 @@ class BioLayer():
 		f['k_name'] = k_name
 		return f
 
+	# Core
 	def compose(self):
 		# Generate a system layer from this biology layer
 		sys = syslayer.SysLayer()
@@ -142,6 +161,8 @@ class BioLayer():
 		for cytokine in self.cytokines:
 			sys.add_element(kind='cytokine', name=cytokine['name'])
 		
+
+
 		### Add linkages
 		## tx cell linkages:
 		# proliferation
