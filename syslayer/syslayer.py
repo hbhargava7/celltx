@@ -45,6 +45,12 @@ class SysLayer:
         r['func'] = function
         self.relationships.append(r)
 
+    def get_element(self, kind, name, compartment, state):
+        pass
+
+    def get_element_state(self, kind, name, compartment, state):
+        pass
+
     def compose(self):
         graph = graphlayer.GraphLayer()
 

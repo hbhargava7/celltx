@@ -216,7 +216,33 @@ class BioLayer:
         # * cytokine modulation (intra-compartment, semi-autogen: target, secretion_state, action)
 
         for tx_cell in self.tx_cells:
-            pass
+            # migration - for each compartment, join each state to equiv in each adjacent compartment
+            for compartment in compartments:
+                adjacent = self.get_adjacent_compartments(compartment)
+                for state in self.gen_states_for_tx_cell(tx_cell):
+                    a = sys.get_element_state('tx_cell', tx_cell['name'], compartment, state)
+                    for adj_compartment in adjacent:
+                        b = sys.get_element_state('tx_cell', tx_cell['name'], adj_compartment, state)
+                        k_name = 'k_mig_%s_to_%s' % (compartment, adj_compartment)
+                        func = Constant(k_name, 10)*a
+                        sys.add_relationship('migration', a, b, func)
+
+                        # TODO: This algorithm will probably add some redundant linkages.
+
+            # death - for each compartment, join each state to self with death coefficient
+            for compartment in compartments:
+                for state in self.gen_states_for_tx_cell(tx_cell):
+                    a = sys.get_element_state('tx_cell', tx_cell['name'], compartment, state)
+                    sys.add_relationship('death', a, a, -Constant('k_death')*a)
+
+            # proliferation - for each compartment, join each state to daughter_state with birth coefficient
+            for compartment in compartments:
+                for state in self.gen_states_for_tx_cell(tx_cell):
+                    a = sys.get_element_state('tx_cell', tx_cell['name'], compartment, state)
+                    b = sys.get_element_state('tx_cell', tx_cell['name'], compartment, tx_cell['daughter_state'])
+                    func = a*Constant('k_proliferation', 10)
+                    sys.add_relationship('prolif', a, b, func)
+            
 
         # Add the cell linkages
         # * proliferation (intra-compartment, full-autogen)
