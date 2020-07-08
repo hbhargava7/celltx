@@ -13,7 +13,7 @@ class Model():
 		self.bio = biolayer.BioLayer()
 		self.sys = syslayer.SysLayer()
 		self.graph = graphlayer.GraphLayer()
-		
+
 		print("Model \"%s\" Instantiated." % self.name)
 
 	def compose_biolayer(self):

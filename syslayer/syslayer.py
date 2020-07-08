@@ -1,3 +1,4 @@
+from ..functions import Selector
 from .. import graphlayer
 
 
@@ -16,7 +17,7 @@ class SysLayer:
 
         self.relationships = []
         # relationships between element singlets as dictionaries with:
-        # 'kind' : kind (proliferation, death, migration, circuitry,
+        # 'kind' : kind (proliferation, death, migration, circuitry, relationship
         # 'a' : source singlet selector
         # 'b' : destination singlet selector
         # 'func' : sympy expression in terms of singlet selectors describing
@@ -45,11 +46,47 @@ class SysLayer:
         r['func'] = function
         self.relationships.append(r)
 
-    def get_element(self, kind, name, compartment, state):
-        pass
+    def validate_selector(self, selector):
+        return True
+
+    def get_element(self, kind, name, compartment):
+        selector_type = 'element'
+
+        cs = {}
+        cs['type'] = selector_type
+        cs['target_type'] = kind
+        cs['target_name'] = name
+        cs['target_compartment'] = compartment
+
+        selector_name = '[%s].[%s].[%s].[%s]' % (selector_type, kind, name, compartment)
+
+        selector = Selector(selector_name, selector_type, cs)
+
+        if self.validate_selector(selector):
+            return selector
+        else:
+            # TODO: Raise an exception here
+            pass
 
     def get_element_state(self, kind, name, compartment, state):
-        pass
+        selector_type = 'element_state'
+
+        cs = {}
+        cs['type'] = selector_type
+        cs['target_type'] = kind
+        cs['target_name'] = name
+        cs['target_compartment'] = compartment
+        cs['target_state'] = state
+
+        selector_name = '[%s].[%s].[%s].[%s].[%s]' % (selector_type, kind, name, compartment, state)
+
+        selector = Selector(selector_name, selector_type, cs)
+
+        if self.validate_selector(selector):
+            return selector
+        else:
+            # TODO: Raise an exception here
+            pass
 
     def compose(self):
         graph = graphlayer.GraphLayer()

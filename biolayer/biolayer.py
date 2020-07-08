@@ -182,6 +182,24 @@ class BioLayer:
 
         target['cytokine_linkages'].append(cytokineLink)
 
+    # HELPERS
+    def gen_states_for_tx_cell(self, tx_cell):
+        states = tx_cell['states']
+        # vars is an array of string names
+        # desired output is:
+        # [[(activated, 0), (primed, 0)], [(activated, 1), (primed, 1)], ...]
+        # for each state, iterate through the other states
+        n = len(state_names)
+        out = []
+        # Iterate through all possible states of n binary vars
+        for i in range(1 << n):
+            s = bin(i)[2:]
+            s = '0' * (n - len(s)) + s
+            state = list(map(int, list(s)))
+            state_description = [(state_names[j], state[j]) for j in range(n)]
+            out.append(state_description)
+        return out
+
     # CORE
     def compose(self):
         # Generate a system layer from this biology layer
@@ -242,7 +260,7 @@ class BioLayer:
                     b = sys.get_element_state('tx_cell', tx_cell['name'], compartment, tx_cell['daughter_state'])
                     func = a*Constant('k_proliferation', 10)
                     sys.add_relationship('prolif', a, b, func)
-            
+
 
         # Add the cell linkages
         # * proliferation (intra-compartment, full-autogen)
