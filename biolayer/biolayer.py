@@ -67,8 +67,11 @@ class BioLayer:
         i['func'] = func
         self.interactions.append(i)
 
+    def validate_selector(self, selector):
+        # TODO: Implement selector validation
+        return True
+
     # SELECTOR Getters - get a selector for something
-    # TODO: Validate selections to for validity and singularity
     def get_tx_celltype(self, name):
         kind = 'tx_celltype'
         cs = {}
@@ -179,65 +182,54 @@ class BioLayer:
 
         target['cytokine_linkages'].append(cytokineLink)
 
-    # Core
+    # CORE
     def compose(self):
         # Generate a system layer from this biology layer
         sys = syslayer.SysLayer()
 
-        ### Passthrough the compartments
+        # Passthrough the compartments
         sys.compartments = self.compartments
         sys.compartment_linkages = self.compartment_linkages
 
-        ### Create elements corresponding to the tx cells
+        # CREATE ALL THE ELEMENTS
+        # Elements exist for each species for each compartment.
+        # Create elements corresponding to the tx cells in each compartment
         for tx in self.tx_cells:
-            sys.add_element(kind='tx_cell', name=tx['name'], states=tx['states'])
+            for compartment in self.compartments:
+                sys.add_element(kind='tx_cell', name=tx['name'], compartment=compartment, states=tx['states'])
+
+        # Create elements corresponding to regular cells
+        for cell in self.cells:
+            sys.add_element(kind='cell', name=cell['name'], compartment=cell['compartment'])
+
+        # Create elements corresponding to cytokines in each compartment
+        for cytokine in self.cytokines:
+            for compartment in self.compartments:
+                sys.add_element(kind='cytokine', name=cytokine['name'], compartment=compartment)
+
+        # Add the Tx cell linkages
+        # * migration (inter-compartment, full-autogen)
+        # * death (intra-compartment, full-autogen)
+        # * proliferation (intra-compartment, semi-autogen: daughter_cellstate)
+        # * state changes (intra-compartment, semi-autogen: state_linkages)
+        # * killing (intra-compartmental, semi-autogen: killer_state, kill_target)
+        # * cytokine modulation (intra-compartment, semi-autogen: target, secretion_state, action)
+
+        for tx_cell in self.tx_cells:
+            pass
+
+        # Add the cell linkages
+        # * proliferation (intra-compartment, full-autogen)
+        # * death (intra-compartment, full-autogen)
 
         for cell in self.cells:
-            sys.add_element(kind='cell', name=cell['name'], compartment=cell['compartment'], )
+            pass
+
+        # Add the cytokine linkages
+        # * diffusion (inter-compartment, full-autogen)
+        # * degradation (intra-compartment, full-autogen)
 
         for cytokine in self.cytokines:
-            sys.add_element(kind='cytokine', name=cytokine['name'])
-
-        # Add tx cell proliferation linkages
-        for prolif_link in self.tx_prolif_linkages:
-            # for each proliferation linkage, link all states of that celltype to the target state with a prolif link
-            target_celltype = self.get_tx_celltype(name=prolif_link['name'])
-            target_state = prolif_link['daughter_state']
-            sys.add_relationship('prolif')
-
-    def gen_linkages_for_tx_cell(self, tx_celltype):
-
-        tx = self.get_tx_celltype(name=tx_celltype)
-
-        # proliferation linkages -
-        proliferation_linkage = tx['prolif_linkage']
-
-
-        return
-
-        # UU, PU, PA, AU each -> UU
-
-        ### Add linkages
-        ## tx cell linkages:
-        # proliferation
-        # death
-        # migration
-        # state changes
-        # killing
-        # cytokine synthesis
-
-        ## cell linkages:
-        # proliferation
-        # death
-
-        ## cytokines
-        # degradation
+            pass
 
         return sys
-
-    # convert the specifications into a syslayer
-
-    # first create all of the elements
-    # for
-
-    # then, create all of the relationships
