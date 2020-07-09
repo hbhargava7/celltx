@@ -17,7 +17,7 @@ class SysLayer:
 
         self.relationships = []
         # relationships between element singlets as dictionaries with:
-        # 'kind' : kind (proliferation, death, migration, circuitry, relationship
+        # 'kind' : kind (proliferation, death, migration, circuitry, relationship)
         # 'a' : source singlet selector
         # 'b' : destination singlet selector
         # 'func' : sympy expression in terms of singlet selectors describing

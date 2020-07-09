@@ -54,7 +54,7 @@ class Model():
 		cs['compartment'] = compartment
 		cs['state'] = state
 		return cs
-
+		# TODO: Test
 	def ipsi_compartment_state(self, state):
 		# tells the interpreter to address the linkage to the version of 
 		# the addressed state that is in the same compartment as the other
