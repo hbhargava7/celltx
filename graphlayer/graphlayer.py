@@ -1,3 +1,4 @@
+# Copyright 2020 Hersh K. Bhargava
 class GraphLayer():
 
 	def __init__(self):

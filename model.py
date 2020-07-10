@@ -1,3 +1,4 @@
+# Copyright 2020 Hersh K. Bhargava
 from warnings import warn
 import networkx as nx
 from . import biolayer

@@ -1,3 +1,4 @@
+# Copyright 2020 Hersh K. Bhargava
 import sympy as sy
 
 
