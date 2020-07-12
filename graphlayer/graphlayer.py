@@ -31,8 +31,7 @@ class GraphLayer():
 		n['type'] = type
 		n['name'] = name
 		n['compartment'] = compartment
-		if state:
-			n['states'] = state
+		n['state'] = state
 		self.nodes.append(n)
 
 	def add_edge(self, type, a, b, func):
@@ -42,7 +41,9 @@ class GraphLayer():
 		e['b'] = b
 		e['func'] = func
 		self.edges.append(e)
-
+	def validate_selector(self, selector):
+		# TODO: Implement validation
+		return True
 	def get_node(self, type, name, compartment, state=None):
 		selector_type = 'node'
 
@@ -51,7 +52,7 @@ class GraphLayer():
 		cs['target_type'] = type
 		cs['target_name'] = name
 		cs['target_compartment'] = compartment
-		if state is not none:
+		if state is not None:
 			cs['state'] = state
 
 		selector_name = '[%s].[%s].[%s].[%s].[%s]' % (selector_type, type, name, compartment, state)

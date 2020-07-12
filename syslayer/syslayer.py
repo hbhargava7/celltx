@@ -2,7 +2,7 @@
 # Laboratories of Hana El-Samad and Wendell Lim
 # University of California, San Francisco
 
-from ..functions import Selector
+from ..functions import Selector, Constant
 from .. import graphlayer
 
 
@@ -21,7 +21,7 @@ class SysLayer:
 
         self.relationships = []
         # relationships between element singlets as dictionaries with:
-        # 'kind' : kind (proliferation, death, migration, circuitry, relationship)
+        # 'type' : type (proliferation, death, migration, circuitry, relationship)
         # 'a' : source singlet selector
         # 'b' : destination singlet selector
         # 'func' : sympy expression in terms of singlet selectors describing
@@ -154,11 +154,11 @@ class SysLayer:
             graph.add_edge(type=relationship['type'], a=a, b=b, func=func)
 
             # This might become necessary if the above implementaion has issues where a selector addresses multiple states.
-            if relationship['kind'] in ['proliferation', 'death', 'migration']:
+            if relationship['type'] in ['proliferation', 'death', 'migration']:
                 pass
-            elif relationship['kind'] in ['circuitry']:
+            elif relationship['type'] in ['circuitry']:
                pass
-            elif relationship['kind'] in ['relationship']:
+            elif relationship['type'] in ['relationship']:
                 pass
 
         return graph
