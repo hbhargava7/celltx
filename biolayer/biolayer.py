@@ -1,4 +1,7 @@
-# Copyright 2020 Hersh K. Bhargava
+# Copyright 2020 Hersh K. Bhargava (https://hershbhargava.com)
+# Laboratories of Hana El-Samad and Wendell Lim
+# University of California, San Francisco
+
 from warnings import warn
 
 from .. import syslayer
@@ -156,7 +159,6 @@ class BioLayer:
 
     def add_tx_cell_killtarget(self, tx_cell_name, target_cells, killer_states):
         target = self.get_species('tx_cell', tx_cell_name)
-
         # killLink:
         # 'target' : selector of type 'cells'
         # 'killer_states' = array of selectors of type 'tx_cellstate'
@@ -188,8 +190,21 @@ class BioLayer:
         target['cytokine_linkages'].append(cytokineLink)
 
     # HELPERS
+    def get_adjacent_compartments(self, compartment):
+        output = []
+        for linkage in self.compartment_linkages:
+            if compartment in linkage:
+                target = None
+                if linkage[0] == compartment:
+                    target = linkage[1]
+                elif linkage[1] == compartment:
+                    target = linkage[0]
+                if target not in output:
+                    output.append(target)
+        return output
+
     def gen_states_for_tx_cell(self, tx_cell):
-        states = tx_cell['states']
+        state_names = tx_cell['states']
         # vars is an array of string names
         # desired output is:
         # [[(activated, 0), (primed, 0)], [(activated, 1), (primed, 1)], ...]
@@ -310,7 +325,7 @@ class BioLayer:
             for compartment in self.compartments:
                 for state in self.gen_states_for_tx_cell(tx_cell):
                     a = sys.get_element_state('tx_cell', tx_cell['name'], compartment, state)
-                    sys.add_relationship('death', a, a, -Constant('k_death')*a)
+                    sys.add_relationship('death', a, a, -Constant('k_death',5)*a)
 
             # proliferation - for each compartment, join each state to daughter_state with birth coefficient
             for compartment in self.compartments:
@@ -347,7 +362,7 @@ class BioLayer:
                     # Get the compartmental cytokine
                     # TODO: THIS IS WRONG THE LINKAGE NEEDS TO BE A -> A NOT TX -> CYTOKINE
                     b = self.convert_bio_sel_to_sys(sys, cytokine_link['target_cytokine'], compartment_override=compartment)
-                    for action_state in cytokine_link['killer_states']:
+                    for action_state in cytokine_link['states']:
                             a = sys.get_element_state('tx_cellstate', tx_cell['name'], compartment=compartment, state=action_state)
                             func = 1
                             if cytokine_link['action'] == 'secrete':
@@ -365,7 +380,7 @@ class BioLayer:
             pro_func = a*Constant('k_proliferation', 10)
             sys.add_relationship('proliferation', a, a, pro_func)
 
-            death_func = -a*constant('k_death', 5)
+            death_func = -a*self.constant('k_death', 5)
             sys.add_relationship('death', a, a, death_func)
 
         # Add the cytokine linkages

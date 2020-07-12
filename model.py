@@ -1,4 +1,7 @@
-# Copyright 2020 Hersh K. Bhargava
+# Copyright 2020 Hersh K. Bhargava (https://hershbhargava.com)
+# Laboratories of Hana El-Samad and Wendell Lim
+# University of California, San Francisco
+
 from warnings import warn
 import networkx as nx
 from . import biolayer

@@ -1,3 +1,7 @@
+# Copyright 2020 Hersh K. Bhargava (https://hershbhargava.com)
+# Laboratories of Hana El-Samad and Wendell Lim
+# University of California, San Francisco
+
 from ..functions import Selector
 from .. import graphlayer
 
@@ -37,9 +41,8 @@ class SysLayer:
 
         self.elements.append(e)
 
-    def add_relationship(self, name, a, b, function):
+    def add_relationship(self, kind, a, b, function):
         r = {}
-        r['name'] = name
         r['type'] = kind
         r['a'] = a
         r['b'] = b
@@ -87,8 +90,45 @@ class SysLayer:
         else:
             # TODO: Raise an exception here
             pass
+    def convert_sys_sel_to_graph(self, graph, selector, state_override=None):
+        cs = selector.selector
+        sys_sel_type = cs['type'] # 'element' or 'element_state'
+        if state_override is not None:
+            cs['target_state'] = state_override # store the overriden state
+
+        # syslayer selector types: 'element' and 'element_state'
+        # graphlayer selector type: 'node'
+
+        if sys_sel_type == 'element': # selecting an element without a state
+           sel = graph.get_node(type=cs['target_type'], name=cs['target_name'], compartment=cs['target_compartment'])
+           return sel
+        elif sys_sel_type == 'element_state': # selecting a state of an element
+            sel = graph.get_node(type=cs['target_type'], name=cs['target_name'], compartment=cs['target_compartment'], state=cs['target_state'])
+            return sel
+        else:
+            warn('SysLayer was unable to convert selector tyep %s to graph' % sys_sel_type)
+
+
 
     def compose(self):
+        # Generate a graph layer from this systems layer
         graph = graphlayer.GraphLayer()
+
+        # CREATE ALL THE NODES
+        for element in self.elements:
+            # If the element has states, iterate through the states
+            if 'states' in element:
+                if type(element['states']) == type([]):
+                    for state in element['states']:
+                        graph.add_node(type=element['type'], name=element['name'], compartment=element['compartment'], state=state)
+            else:
+                graph.add_node(type=element['type'], name=element['name'], compartment=element['compartment'])
+
+        # CREATE ALL THE EDGES
+        for relationship in self.relationships:
+            # The relationship selectors 'a' and 'b' as well as the non-constants in 'func' need to be converted to node selectors
+            a = self.convert_sys_sel_to_graph(self, graph, selector)
+            # IF THERE ARE MULTIPLE STATES....
+
 
         return graph
