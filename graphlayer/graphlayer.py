@@ -4,6 +4,8 @@
 
 from warnings import warn
 
+import networkx as nx
+
 from ..functions import Selector, Constant
 
 
@@ -66,5 +68,16 @@ class GraphLayer():
 		pass
 
 	def generate_graph(self):
-		pass
+		G = nx.MultiDiGraph()
+
+		for node in self.nodes:
+			node_sel = self.get_node(node['type'], node['name'], node['compartment'], node['state'])
+			G.add_node(node_sel.name) # unique node identifier
+
+		for edge in self.edges:
+			a = edge['a'].name
+			b = edge['b'].name
+			G.add_edge(a,b)
+
+		return G
 
