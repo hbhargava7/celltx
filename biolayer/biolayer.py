@@ -269,9 +269,10 @@ class BioLayer:
                 sys_constant = arg
                 func.subs(arg, sys_constant)
             else:
+                # term is a composite, recurse
                 result = self.convert_bio_func_to_sys(sys, arg)
                 func.subs(arg, result)
-                # term is a composite, recurse
+
         return func
 
     # CORE

@@ -90,6 +90,7 @@ class SysLayer:
         else:
             # TODO: Raise an exception here
             pass
+
     def convert_sys_sel_to_graph(self, graph, selector, state_override=None):
         cs = selector.selector
         sys_sel_type = cs['type'] # 'element' or 'element_state'
@@ -106,9 +107,23 @@ class SysLayer:
             sel = graph.get_node(type=cs['target_type'], name=cs['target_name'], compartment=cs['target_compartment'], state=cs['target_state'])
             return sel
         else:
-            warn('SysLayer was unable to convert selector tyep %s to graph' % sys_sel_type)
+            warn('SysLayer was unable to convert selector type %s to graph' % sys_sel_type)
 
-
+    def convert_sys_func_to_graph(self, graph, func):
+        for arg in func.args:
+            if isinstance(arg, Selector):
+                # term is a syslayer selector, convert to a graphlayer selector
+                graph_selector = self.convert_sys_sel_to_graph(graph, arg)
+                func.subs(arg, graph_selector)
+            elif isinstance(arg, Constant):
+                # term is a constant, don't change it
+                sys_constant = arg
+                func.subs(arg, sys_constant)
+            else:
+                # term is a composite, recurse
+                result = self.convert_sys_func_to_graph(graph, arg)
+                func.subs(arg, result)
+        return func
 
     def compose(self):
         # Generate a graph layer from this systems layer
@@ -125,10 +140,25 @@ class SysLayer:
                 graph.add_node(type=element['type'], name=element['name'], compartment=element['compartment'])
 
         # CREATE ALL THE EDGES
-        for relationship in self.relationships:
-            # The relationship selectors 'a' and 'b' as well as the non-constants in 'func' need to be converted to node selectors
-            a = self.convert_sys_sel_to_graph(self, graph, selector)
-            # IF THERE ARE MULTIPLE STATES....
+        # * proliferation (intra-state)
+        # * death (intra-state)
+        # * migration (intra-state, trans-compartment)
+        # * circuitry (trans-state, intra-compartment)
+        # * relationship (generic; depends on selectors)
 
+        for relationship in self.relationships:
+            a = self.convert_sys_sel_to_graph(graph, relationship['a'])
+            b = self.convert_sys_sel_to_graph(graph, relationship['b'])
+            func = self.convert_sys_func_to_graph(graph, relationship['func'])
+
+            graph.add_edge(type=relationship['type'], a=a, b=b, func=func)
+
+            # This might become necessary if the above implementaion has issues where a selector addresses multiple states.
+            if relationship['kind'] in ['proliferation', 'death', 'migration']:
+                pass
+            elif relationship['kind'] in ['circuitry']:
+               pass
+            elif relationship['kind'] in ['relationship']:
+                pass
 
         return graph
