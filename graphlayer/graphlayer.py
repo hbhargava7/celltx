@@ -78,7 +78,7 @@ class GraphLayer():
 		for edge in self.edges:
 			a = edge['a'].name
 			b = edge['b'].name
-			G.add_edge(a,b)
+			G.add_edge(a,b, label=str(edge['func']))
 
 		return G
 
