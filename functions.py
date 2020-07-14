@@ -11,7 +11,20 @@ class Selector(sy.Symbol):
         var = super().__new__(cls, name, **assumptions)
         var.selector = selector
         var.selector_type = selector_type
+        var.latex = latex
+        var.domain = domain
         return var
+
+    def _latex(self, printer):
+        if self.latex is not None:
+            return self.latex
+        return printer._print_Symbol(self)
+
+    def __getstate__(self):
+        state = super().__getstate__()
+        state.update(latex=self.latex, domain=self.domain)
+        return state
+
 
 
 class Constant(sy.Symbol):
@@ -20,6 +33,7 @@ class Constant(sy.Symbol):
         var = super().__new__(cls, name, **assumptions)
         expr = sy.sympify(expr)
         var.expr = expr
+        var.latex = latex
         return var
 
 

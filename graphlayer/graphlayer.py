@@ -57,8 +57,8 @@ class GraphLayer():
 			cs['state'] = state
 
 		selector_name = '[%s].[%s].[%s].[%s].[%s]' % (selector_type, type, name, compartment, state)
-
-		selector = Selector(selector_name, selector_type, cs)
+		selector_latex = '\\text{[%s].[%s].[%s].[%s].[%s]}' % (selector_type, type, name, compartment, state)
+		selector = Selector(selector_name, selector_type, cs, latex=selector_latex)
 
 		if self.validate_selector(selector):
 			return selector
