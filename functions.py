@@ -26,7 +26,6 @@ class Selector(sy.Symbol):
         return state
 
 
-
 class Constant(sy.Symbol):
 
     def __new__(cls, name, expr, latex=None, domain=None, **assumptions):
@@ -34,7 +33,18 @@ class Constant(sy.Symbol):
         expr = sy.sympify(expr)
         var.expr = expr
         var.latex = latex
+        var.domain = domain
         return var
+
+    def _latex(self, printer):
+        if self.latex is not None:
+            return self.latex
+        return printer._print_Symbol(self)
+
+    def __getstate__(self):
+        state = super().__getstate__()
+        state.update(latex=self.latex, domain=self.domain)
+        return state
 
 
 def hill(x, kmin, kmax, x50, n):
