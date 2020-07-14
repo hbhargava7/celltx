@@ -38,7 +38,6 @@ class SysLayer:
         e['name'] = name
         e['compartment'] = compartment
         e['states'] = states
-
         self.elements.append(e)
 
     def add_relationship(self, kind, a, b, function):
@@ -154,8 +153,8 @@ class SysLayer:
                     if len(element['states']) > 0:
                         for state in self.gen_states_for_tx_cell(element):
                             graph.add_node(type=element['type'], name=element['name'], compartment=element['compartment'], state=state)
-            else:
-                graph.add_node(type=element['type'], name=element['name'], compartment=element['compartment'])
+                        continue
+            graph.add_node(type=element['type'], name=element['name'], compartment=element['compartment'])
 
         # CREATE ALL THE EDGES
         # * proliferation (intra-state)
