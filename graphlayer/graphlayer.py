@@ -99,10 +99,15 @@ class GraphLayer():
 		funcs = nx.get_edge_attributes(G, 'func')
 		node_sels = nx.get_node_attributes(G, 'data')
 
-		ODEs = {}
+		ODEs = []
 
 		# For each node, generate an equation
 		for node in G:
+			try:
+				node_selector = node_sels[node]
+			except:
+				warn('failed to get node selector for node %s' % node)
+				continue
 			node_equation = sy.sympify(0)
 
 			# For self loop edges:
@@ -131,6 +136,9 @@ class GraphLayer():
 				except:
 					warn('tried and failed to process an out_edge for node %s' % node)
 
-			ODEs[node] = node_equation
+			equation = sy.Eq(sy.Derivative(node_selector, sy.sympify('t')), node_equation)
+
+			# ODEs[node] = sy.Eq(node_equation)
+			ODEs.append(equation)
 
 		return ODEs
