@@ -68,7 +68,7 @@ class GraphLayer():
 	def get_edge(self):
 		pass
 
-	def generate_graph(self):
+	def generate_graph(self, inc_labels=True):
 		G = nx.MultiDiGraph()
 
 		for node in self.nodes:
@@ -78,7 +78,9 @@ class GraphLayer():
 		for edge in self.edges:
 			a = edge['a'].name
 			b = edge['b'].name
-			G.add_edge(a,b, label=str(edge['func']))
-
+			if inc_labels:
+				G.add_edge(a,b, label=str(edge['func']))
+			else:
+				G.add_edge(a, b)
 		return G
 

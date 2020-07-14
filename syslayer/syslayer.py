@@ -32,7 +32,7 @@ class SysLayer:
     def add_compartment_linkage(self, a, b):
         self.compartment_linkages.append((a, b))
 
-    def add_element(self, kind, name, compartment=None, states=[]):
+    def add_element(self, kind, name, compartment=None, states=None):
         e = {}
         e['type'] = kind
         e['name'] = name
@@ -100,9 +100,9 @@ class SysLayer:
         # syslayer selector types: 'element' and 'element_state'
         # graphlayer selector type: 'node'
 
-        if sys_sel_type == 'element': # selecting an element without a state
-           sel = graph.get_node(type=cs['target_type'], name=cs['target_name'], compartment=cs['target_compartment'])
-           return sel
+        if sys_sel_type == 'element':  # selecting an element without a state
+            sel = graph.get_node(type=cs['target_type'], name=cs['target_name'], compartment=cs['target_compartment'])
+            return sel
         elif sys_sel_type == 'element_state': # selecting a state of an element
             sel = graph.get_node(type=cs['target_type'], name=cs['target_name'], compartment=cs['target_compartment'], state=cs['target_state'])
             return sel
@@ -114,16 +114,33 @@ class SysLayer:
             if isinstance(arg, Selector):
                 # term is a syslayer selector, convert to a graphlayer selector
                 graph_selector = self.convert_sys_sel_to_graph(graph, arg)
-                func.subs(arg, graph_selector)
+                func = func.subs(arg, graph_selector)
             elif isinstance(arg, Constant):
                 # term is a constant, don't change it
                 sys_constant = arg
-                func.subs(arg, sys_constant)
+                func = func.subs(arg, sys_constant)
             else:
                 # term is a composite, recurse
                 result = self.convert_sys_func_to_graph(graph, arg)
-                func.subs(arg, result)
+                func = func.subs(arg, result)
         return func
+
+    def gen_states_for_tx_cell(self, tx_cell):
+        state_names = tx_cell['states']
+        # vars is an array of string names
+        # desired output is:
+        # [[(activated, 0), (primed, 0)], [(activated, 1), (primed, 1)], ...]
+        # for each state, iterate through the other states
+        n = len(state_names)
+        out = []
+        # Iterate through all possible states of n binary vars
+        for i in range(1 << n):
+            s = bin(i)[2:]
+            s = '0' * (n - len(s)) + s
+            state = list(map(int, list(s)))
+            state_description = [(state_names[j], state[j]) for j in range(n)]
+            out.append(state_description)
+        return out
 
     def compose(self):
         # Generate a graph layer from this systems layer
@@ -133,9 +150,10 @@ class SysLayer:
         for element in self.elements:
             # If the element has states, iterate through the states
             if 'states' in element:
-                if type(element['states']) == type([]):
-                    for state in element['states']:
-                        graph.add_node(type=element['type'], name=element['name'], compartment=element['compartment'], state=state)
+                if isinstance(element['states'], list):
+                    if len(element['states']) > 0:
+                        for state in self.gen_states_for_tx_cell(element):
+                            graph.add_node(type=element['type'], name=element['name'], compartment=element['compartment'], state=state)
             else:
                 graph.add_node(type=element['type'], name=element['name'], compartment=element['compartment'])
 
@@ -157,7 +175,7 @@ class SysLayer:
             if relationship['type'] in ['proliferation', 'death', 'migration']:
                 pass
             elif relationship['type'] in ['circuitry']:
-               pass
+                pass
             elif relationship['type'] in ['relationship']:
                 pass
 

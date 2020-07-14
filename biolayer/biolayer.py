@@ -74,6 +74,7 @@ class BioLayer:
         self.interactions.append(i)
 
     def validate_selector(self, selector):
+
         # TODO: Implement selector validation
         return True
 
@@ -163,15 +164,29 @@ class BioLayer:
         # 'target' : selector of type 'cells'
         # 'killer_states' = array of selectors of type 'tx_cellstate'
 
+        # The states might be passed as a selector, e.g. from get_tx_cellstate.
+        # If this is the case, need to extract the arrays.
+        comp_states = []
+        for state in killer_states:
+            if not isinstance(state, list):
+                comp_states.append(state.selector['state'])
+            else:
+                comp_states.append(state)
+
         killLink = {}
         killLink['target'] = target_cells
-        killLink['killer_states'] = killer_states
+        killLink['killer_states'] = comp_states
 
         target['killing_linkages'].append(killLink)
 
     def set_tx_cell_daughter_state(self, tx_cell_name, daughter_state):
         target = self.get_species('tx_cell', tx_cell_name)
         # daughter_state : selector of type 'tx_cellstate'
+
+        # The daughter_state might be passed as a selector, e.g. from get_tx_cellstate.
+        # If this is the case, need to extract the array.
+        if not isinstance(daughter_state, list):
+            daughter_state = daughter_state.selector['state']
         target['daughter_state'] = daughter_state
 
     def add_tx_cytokine_interaction(self, tx_cell_name, cytokine, states, action):
@@ -182,9 +197,18 @@ class BioLayer:
         # 'states' : array of selectors of type 'tx_cellstate'
         # 'action' : either 'sink' or 'secrete'
 
+        # The states might be passed as a selector, e.g. from get_tx_cellstate.
+        # If this is the case, need to extract the arrays.
+        comp_states = []
+        for state in states:
+            if not isinstance(state, list):
+                comp_states.append(state.selector['state'])
+            else:
+                comp_states.append(state)
+
         cytokineLink = {}
         cytokineLink['target_cytokine'] = cytokine
-        cytokineLink['states'] = states
+        cytokineLink['states'] = comp_states
         cytokineLink['action'] = action
 
         target['cytokine_linkages'].append(cytokineLink)
@@ -233,7 +257,7 @@ class BioLayer:
         # both have 'type', 'target_type', 'target_name', 'target_compartment'
         # 'element_state' has 'target_state' specifier
 
-        nonstate_types = ['tx_cellstate', 'cell', 'cytokine']
+        nonstate_types = ['tx_celltype', 'cell', 'cytokine']
 
         if biolayer_sel_type in nonstate_types:
             # get the corresponding element selector from the syslayer
@@ -258,21 +282,21 @@ class BioLayer:
         # if it's an expression, pass rescursively to this function and substitute
 
         # TODO: I have no clue if this recursion is going to work.
-
+        print('start')
+        print(func)
         for arg in func.args:
             if isinstance(arg, Selector):
                 # term is a biolayer selector, convert to syslayer selector
                 sys_selector = self.convert_bio_sel_to_sys(sys, arg)
-                func.subs(arg, sys_selector)
+                func = func.subs(arg, sys_selector)
             elif isinstance(arg, Constant):
                 # term is a constant, don't change it
                 sys_constant = arg
-                func.subs(arg, sys_constant)
+                func = func.subs(arg, sys_constant)
             else:
                 # term is a composite, recurse
                 result = self.convert_bio_func_to_sys(sys, arg)
-                func.subs(arg, result)
-
+                func = func.subs(arg, result)
         return func
 
     # CORE
@@ -353,7 +377,7 @@ class BioLayer:
                     # Get the compartmental target
                     b = self.convert_bio_sel_to_sys(sys, kill_link['target'], compartment_override=compartment)
                     for killer_state in kill_link['killer_states']:
-                        a = sys.get_element_state('tx_cellstate', tx_cell['name'], compartment, killer_state)
+                        a = sys.get_element_state('tx_cell', tx_cell['name'], compartment, killer_state)
                         func = a*b*Constant('k_kill', 10)
                         sys.add_relationship('killing', a, b, func)
 
@@ -364,7 +388,7 @@ class BioLayer:
                     # TODO: THIS IS WRONG THE LINKAGE NEEDS TO BE A -> A NOT TX -> CYTOKINE
                     b = self.convert_bio_sel_to_sys(sys, cytokine_link['target_cytokine'], compartment_override=compartment)
                     for action_state in cytokine_link['states']:
-                            a = sys.get_element_state('tx_cellstate', tx_cell['name'], compartment=compartment, state=action_state)
+                            a = sys.get_element_state('tx_cell', tx_cell['name'], compartment=compartment, state=action_state)
                             func = 1
                             if cytokine_link['action'] == 'secrete':
                                 func = a*Constant('k_secrete', 10)
