@@ -8,6 +8,7 @@ import networkx as nx
 import sympy as sy
 
 from ..functions import Selector, Constant
+from .. import odelayer
 
 
 class GraphLayer():
@@ -85,6 +86,13 @@ class GraphLayer():
 				G.add_edge(a, b)
 		return G
 
+	def write_graph_dotfile(self, path, inc_labels=True):
+		graph = self.generate_graph(inc_labels)
+		nx.drawing.nx_agraph.write_dot(graph, path)
+		# !fdp -Tpng -Gdpi=400 graph.dot > graph.png
+		# !open graph.png
+
+
 	def selfloops_for_node(self, graph, node):
 		sl = nx.selfloop_edges(graph, data=True)
 		out = []
@@ -93,13 +101,13 @@ class GraphLayer():
 				out.append(l)
 		return out
 
-	def generate_ode_model(self):
+	def compose_ode_system(self):
 		G = self.generate_graph()
 
 		funcs = nx.get_edge_attributes(G, 'func')
 		node_sels = nx.get_node_attributes(G, 'data')
 
-		ODEs = []
+		equations = []
 
 		# For each node, generate an equation
 		for node in G:
@@ -138,7 +146,7 @@ class GraphLayer():
 
 			equation = sy.Eq(sy.Derivative(node_selector, sy.sympify('t')), node_equation)
 
-			# ODEs[node] = sy.Eq(node_equation)
-			ODEs.append(equation)
+			equations.append(equation)
 
-		return ODEs
+		ode_layer = odelayer.ODELayer(equations)
+		return ode_layer

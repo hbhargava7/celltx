@@ -7,6 +7,7 @@ import networkx as nx
 from . import biolayer
 from . import syslayer
 from . import graphlayer
+from . import odelayer
 
 
 class Model:
@@ -17,6 +18,7 @@ class Model:
         self.bio = biolayer.BioLayer()
         self.sys = syslayer.SysLayer()
         self.graph = graphlayer.GraphLayer()
+        self.ode = None
 
         print("Model \"%s\" Instantiated." % self.name)
 
