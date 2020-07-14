@@ -170,12 +170,5 @@ class SysLayer:
 
             graph.add_edge(type=relationship['type'], a=a, b=b, func=func)
 
-            # This might become necessary if the above implementaion has issues where a selector addresses multiple states.
-            if relationship['type'] in ['proliferation', 'death', 'migration']:
-                pass
-            elif relationship['type'] in ['circuitry']:
-                pass
-            elif relationship['type'] in ['relationship']:
-                pass
-
         return graph
+
