@@ -1,3 +1,6 @@
+import numpy as np
+from scipy.integrate import odeint
+
 from ..functions import Selector, Constant
 
 
@@ -22,6 +25,11 @@ class ODELayer():
                 if isinstance(term, Constant):
                     constants.append(term)
         return list(set(constants))
+    def model(self, x, t, p):
+        # x is an array of n variables
+        # t is the time
+        # p is a dict with the param values
+
 
     def split_parameter(self, parameter):
         pass
