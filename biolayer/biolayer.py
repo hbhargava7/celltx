@@ -266,12 +266,12 @@ class BioLayer:
 
         elif biolayer_sel_type == 'tx_cellstate':
             # get the corresponding elements_state selector from the syslayer
-            sel = sys.get_element_state(kind=biolayer_sel_type, name=cs['name'], compartment=cs['compartment'], state=cs['state'])
+            sel = sys.get_element_state(kind='tx_cell', name=cs['name'], compartment=cs['compartment'], state=cs['state'])
             return sel
         else:
             warn('BioLayer was was unable to convert selector type %s to sys' % biolayer_sel_type)
 
-    def convert_bio_func_to_sys(self, sys, func):
+    def convert_bio_func_to_sys(self, sys, func, compartment_context=None):
         # map a biolayer expression (func) onto a syslayer compatible one
         # i.e., convert each selector within the expression to a syslayer compatible one
         # and leave the constants as is
@@ -282,12 +282,15 @@ class BioLayer:
         # if it's an expression, pass rescursively to this function and substitute
 
         # TODO: I have no clue if this recursion is going to work.
-        print('start')
-        print(func)
         for arg in func.args:
             if isinstance(arg, Selector):
                 # term is a biolayer selector, convert to syslayer selector
-                sys_selector = self.convert_bio_sel_to_sys(sys, arg)
+                sys_selector = None
+                if compartment_context is not None:
+                    sys_selector = self.convert_bio_sel_to_sys(sys, arg, compartment_override=compartment_context)
+                else:
+                    sys_selector = self.convert_bio_sel_to_sys(sys, arg)
+
                 func = func.subs(arg, sys_selector)
             elif isinstance(arg, Constant):
                 # term is a constant, don't change it
@@ -295,7 +298,11 @@ class BioLayer:
                 func = func.subs(arg, sys_constant)
             else:
                 # term is a composite, recurse
-                result = self.convert_bio_func_to_sys(sys, arg)
+                result = None
+                if compartment_context is not None:
+                    result = self.convert_bio_func_to_sys(sys, arg, compartment_context=compartment_context)
+                else:
+                    result = self.convert_bio_func_to_sys(sys, arg)
                 func = func.subs(arg, result)
         return func
 
@@ -350,7 +357,7 @@ class BioLayer:
             for compartment in self.compartments:
                 for state in self.gen_states_for_tx_cell(tx_cell):
                     a = sys.get_element_state('tx_cell', tx_cell['name'], compartment, state)
-                    sys.add_relationship('death', a, a, -Constant('k_death',5)*a)
+                    sys.add_relationship('death', a, a, -Constant('k_death', 5)*a)
 
             # proliferation - for each compartment, join each state to daughter_state with birth coefficient
             for compartment in self.compartments:
@@ -366,9 +373,12 @@ class BioLayer:
                     a = sys.get_element_state('tx_cell', tx_cell['name'], compartment, state)
                     for linkage in tx_cell['state_linkages']:
                         # if the linkage stems from a, add the linkage
-                        if linkage['a'] == a:
-                            b = self.convert_bio_sel_to_sys(sys, linkage['b'])
-                            func = self.convert_bio_func_to_sys(sys, linkage['func'])
+                        link_a_sys = self.convert_bio_sel_to_sys(sys, linkage['a'], compartment_override=compartment)
+                        if a.selector == link_a_sys.selector:
+                            # The func will be in terms of elements in the local compartment.
+                            # It is possible that a term will be undefined in the local compartment (e.g. a+b+ cells)
+                            b = self.convert_bio_sel_to_sys(sys, linkage['b'], compartment_override=compartment)
+                            func = self.convert_bio_func_to_sys(sys, linkage['func'], compartment_context=compartment)
                             sys.add_relationship('state_link', a, b, func)
 
             # killing - for each compartment, join the killer state to the killed state for the tx cell

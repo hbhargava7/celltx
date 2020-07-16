@@ -31,6 +31,17 @@ class ODELayer():
         return list(set(constants))
 
     def gen_ode_model(self):
+        # Prune any term from an equation that is not either a constant or the LHS of another equation.
+        pruned_eqs = []
+        lhs = [eq.lhs.args[0] for eq in self.equations]
+        for eq in self.equations:
+            for arg in self.ravel_expression(eq.rhs):
+                if arg not in lhs and not isinstance(arg, Constant):
+                    eq = eq.subs(arg, 0)
+            pruned_eqs.append(eq)
+        self.equations = pruned_eqs
+
+        # Process
         rhss = [i.rhs for i in self.equations]
 
         all_args = []
