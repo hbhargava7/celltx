@@ -1,4 +1,5 @@
 import numpy as np
+import sympy as sy
 from scipy.integrate import odeint
 
 from ..functions import Selector, Constant
@@ -9,6 +10,8 @@ class ODELayer():
     def __init__(self, equations):
         self.equations = equations
         self.f_model = None
+        self.args = None
+        self.params = None
 
     def ravel_expression(self, expr):
         args = []
@@ -28,12 +31,11 @@ class ODELayer():
         return list(set(constants))
 
     def gen_ode_model(self):
-        rhss = [i.rhs for i in model.ode.equations]
-        lhss = [i.lhs for i in model.ode.equations]
+        rhss = [i.rhs for i in self.equations]
 
         all_args = []
         for eq in rhss:
-            args = model.ode.ravel_expression(eq)
+            args = self.ravel_expression(eq)
             for a in args:
                 all_args.append(a)
 
@@ -54,14 +56,23 @@ class ODELayer():
                     unique_consts.append(val)
             else:
                 print('unable to handle %s' % val)
+        self.args = unique_sels
+        self.params = unique_consts
 
         unique_args = unique_sels + unique_consts
 
         self.f_model = sy.lambdify(unique_args, rhss)
 
     def model(self, X, t, args):
+        # print("Evaluating Model")
+        # print("X = %s" % X)
+        # print("args = %s" % args)
+        # print("t = %s" % t)
         in_vals = np.concatenate((X, args))
-        return self.f_model(*in_vals)
+        # print("results = %s" % self.f_model(*in_vals))
+        out = self.f_model(*in_vals)
+        out = [0 if foo < 0 else foo for foo in out]
+        return out
 
     def split_parameter(self, parameter):
         pass
