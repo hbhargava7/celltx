@@ -34,6 +34,7 @@ class Constant(sy.Symbol):
         var.expr = expr
         var.latex = latex
         var.domain = domain
+        var.selector = name
         return var
 
     def _latex(self, printer):
