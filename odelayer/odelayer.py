@@ -75,14 +75,9 @@ class ODELayer():
         self.f_model = sy.lambdify(unique_args, rhss)
 
     def model(self, X, t, args):
-        # print("Evaluating Model")
-        # print("X = %s" % X)
-        # print("args = %s" % args)
-        # print("t = %s" % t)
+        X = [0 if foo < 0 else foo for foo in X]
         in_vals = np.concatenate((X, args))
-        # print("results = %s" % self.f_model(*in_vals))
         out = self.f_model(*in_vals)
-        out = [0 if foo < 0 else foo for foo in out]
         return out
 
     def split_parameter(self, parameter):

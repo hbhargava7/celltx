@@ -152,16 +152,41 @@ class GraphLayer():
 			# For each edge originating from the node, subtract edge functions if destination node is same type and name
 			for edge in self.out_edges_for_node(G, node):
 				try:
+					if edge[2]['func'].args[0].name is 'k_proliferation':
+						warn("WARNING: used extremely hacked up protection clause to not subtract proliferation")
+						continue
+				except:
+					pass
+				try:
 					origin_node = node_sels[edge[0]]
 					destination_node = node_sels[edge[1]]
 
+					# If it's a state change (same type, name, compartment), subtract the term.
 					if origin_node.selector['target_type'] is destination_node.selector['target_type'] and \
-							origin_node.selector['target_name'] == destination_node.selector['target_name']:
-						if destination_node is not origin_node:
+						origin_node.selector['target_name'] is destination_node.selector['target_name'] and \
+						origin_node.selector['target_compartment'] is destination_node.selector['target_compartment']:
+
+						if destination_node.selector is not origin_node.selector:
+
 							node_equation = node_equation - edge[2]['func']
-							print("Added Term (OUT): %s" % edge[2]['func'])
+							print("Added Term (OUT, statechange rule): %s" % edge[2]['func'])
 				except:
-					warn('tried and failed to process an out_edge for node %s' % node)
+					pass
+				try:
+					origin_node = node_sels[edge[0]]
+					destination_node = node_sels[edge[1]]
+
+
+					# If it's migration (same type, name, state, different compartments), subtract the term.
+					if origin_node.selector['target_type'] is destination_node.selector['target_type'] and \
+							origin_node.selector['target_name'] is destination_node.selector['target_name'] and \
+							origin_node.selector['state'] == destination_node.selector['state'] and \
+							origin_node.selector['target_compartment'] is not destination_node.selector['target_compartment']:
+						if destination_node.selector is not origin_node.selector:
+							node_equation = node_equation - edge[2]['func']
+							print("Added Term (OUT, migration rule): %s" % edge[2]['func'])
+				except:
+					pass
 
 			equation = sy.Eq(sy.Derivative(node_selector, sy.sympify('t')), node_equation)
 
