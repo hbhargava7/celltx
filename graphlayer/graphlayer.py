@@ -135,19 +135,15 @@ class GraphLayer():
 				warn('failed to get node selector for node %s' % node)
 				continue
 			node_equation = sy.sympify(0)
-			print("------------")
-			print("Addressing Node: %s" % node)
-			print("This node has %i in-edges" % len(G.in_edges(node)))
-			print("This node has %i out-edges" % len(G.out_edges(node)))
-			# For self loop edges:
-			# for selfloop in self.selfloops_for_node(G, node):
-			# 	node_equation = node_equation + selfloop[2]['func']
-			# 	print("Added Term (SELF): %s" % selfloop[2]['func'])
+			# print("------------")
+			# print("Addressing Node: %s" % node)
+			# print("This node has %i in-edges" % len(G.in_edges(node)))
+			# print("This node has %i out-edges" % len(G.out_edges(node)))
 
 			# For edge pointing to the node, add the edge functions to the equation
 			for edge in self.in_edges_for_node(G, node):
 				node_equation = node_equation + edge[2]['func']
-				print("Added Term (IN): %s" % edge[2]['func'])
+				# print("Added Term (IN): %s" % edge[2]['func'])
 
 			# For each edge originating from the node, subtract edge functions if destination node is same type and name
 			for edge in self.out_edges_for_node(G, node):
@@ -169,7 +165,7 @@ class GraphLayer():
 						if destination_node.selector is not origin_node.selector:
 
 							node_equation = node_equation - edge[2]['func']
-							print("Added Term (OUT, statechange rule): %s" % edge[2]['func'])
+							# print("Added Term (OUT, statechange rule): %s" % edge[2]['func'])
 				except:
 					pass
 				try:
@@ -184,7 +180,7 @@ class GraphLayer():
 							origin_node.selector['target_compartment'] is not destination_node.selector['target_compartment']:
 						if destination_node.selector is not origin_node.selector:
 							node_equation = node_equation - edge[2]['func']
-							print("Added Term (OUT, migration rule): %s" % edge[2]['func'])
+							# print("Added Term (OUT, migration rule): %s" % edge[2]['func'])
 				except:
 					pass
 
