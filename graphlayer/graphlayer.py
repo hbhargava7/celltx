@@ -81,7 +81,7 @@ class GraphLayer():
 			a = edge['a'].name
 			b = edge['b'].name
 			if inc_labels:
-				G.add_edge(a,b, label=str(edge['func']), func=edge['func'])
+				G.add_edge(a, b, label=str(edge['func']), func=edge['func'])
 			else:
 				G.add_edge(a, b)
 		return G
@@ -101,6 +101,24 @@ class GraphLayer():
 				out.append(l)
 		return out
 
+	def in_edges_for_node(self, graph, node):
+		edges = graph.edges(data=True)
+		out = []
+
+		for edge in edges:
+			if edge[1] is node:
+				out.append(edge)
+		return out
+
+	def out_edges_for_node(self, graph, node):
+		edges = graph.edges(data=True)
+		out = []
+
+		for edge in edges:
+			if edge[0] is node:
+				out.append(edge)
+		return out
+
 	def compose_ode_system(self):
 		G = self.generate_graph()
 
@@ -117,30 +135,31 @@ class GraphLayer():
 				warn('failed to get node selector for node %s' % node)
 				continue
 			node_equation = sy.sympify(0)
-
+			print("------------")
+			print("Addressing Node: %s" % node)
+			print("This node has %i in-edges" % len(G.in_edges(node)))
+			print("This node has %i out-edges" % len(G.out_edges(node)))
 			# For self loop edges:
-			for selfloop in self.selfloops_for_node(G, node):
-				node_equation = node_equation + selfloop[2]['func']
+			# for selfloop in self.selfloops_for_node(G, node):
+			# 	node_equation = node_equation + selfloop[2]['func']
+			# 	print("Added Term (SELF): %s" % selfloop[2]['func'])
 
 			# For edge pointing to the node, add the edge functions to the equation
-			for edge in G.in_edges(node):
-				# There may be multiple edges connecting the same two nodes (esp for self loops)
-				num_edges = G.number_of_edges(edge[0], edge[1])
-				for i in range(num_edges):
-					node_equation = node_equation + funcs[(edge[0], edge[1], i)]
+			for edge in self.in_edges_for_node(G, node):
+				node_equation = node_equation + edge[2]['func']
+				print("Added Term (IN): %s" % edge[2]['func'])
 
 			# For each edge originating from the node, subtract edge functions if destination node is same type and name
-			for edge in G.out_edges(node):
+			for edge in self.out_edges_for_node(G, node):
 				try:
 					origin_node = node_sels[edge[0]]
 					destination_node = node_sels[edge[1]]
 
 					if origin_node.selector['target_type'] is destination_node.selector['target_type'] and \
 							origin_node.selector['target_name'] == destination_node.selector['target_name']:
-						# There may be multiple edges connecting the same two nodes (esp for self loops)
-						num_edges = G.number_of_edges(edge[0], edge[1])
-						for i in range(num_edges):
-							node_equation = node_equation - funcs[(edge[0], edge[1], i)]
+						if destination_node is not origin_node:
+							node_equation = node_equation - edge[2]['func']
+							print("Added Term (OUT): %s" % edge[2]['func'])
 				except:
 					warn('tried and failed to process an out_edge for node %s' % node)
 

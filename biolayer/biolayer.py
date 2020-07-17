@@ -388,7 +388,7 @@ class BioLayer:
                     b = self.convert_bio_sel_to_sys(sys, kill_link['target'], compartment_override=compartment)
                     for killer_state in kill_link['killer_states']:
                         a = sys.get_element_state('tx_cell', tx_cell['name'], compartment, killer_state)
-                        func = a*b*Constant('k_kill', 10)
+                        func = -a*b*Constant('k_kill', 10)
                         sys.add_relationship('killing', a, b, func)
 
             # cytokine modulation - for each compartment, join the action state to the cytokine
