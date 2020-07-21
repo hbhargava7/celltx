@@ -69,6 +69,7 @@ class ODELayer():
                     unique_consts.append(val)
             else:
                 print('unable to handle %s' % val)
+
         self.args = unique_sels
         self.params = unique_consts
 
@@ -100,6 +101,15 @@ class ODELayer():
                 new_out.append(val)
 
         return new_out
+
+    def display_args(self):
+        print("MODEL ARGUMENTS (index | name)")
+        for i, arg in enumerate(self.args):
+            print("%i | %s" % (i, arg))
+
+        print("\nMODEL PARAMETERS (index | name | value)")
+        for i, param in enumerate(self.params):
+            print("%i | %s | %.2f" % (i, param, param.expr))
 
     def split_parameter(self, parameter):
         pass
