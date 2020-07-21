@@ -2,6 +2,8 @@
 # Laboratories of Hana El-Samad and Wendell Lim
 # University of California, San Francisco
 
+"""Specify the architecture of a biological system at molecular, cellular, and tissue-level scales."""
+
 from warnings import warn
 
 from .. import syslayer
@@ -9,43 +11,84 @@ from ..functions import Selector, Constant
 
 
 class BioLayer:
+    """
+    Class which enables specification and storage of multiscale models of cell therapies in a biologically intuitive fashion.
+
+    Helper Pseudo-Classes
+    ---------------------
+    celltx currently uses a variety of pseudo-classes which are currently implemented as ``dict``s. Their specifications
+    are provided here.
+
+    StateLink : dict
+        Dictionary describing a linkage between two states of a tx_celltype (e.g. [(primed, 0)] and [(primed, 1)].
+        StateLink has the following structure:
+            * ``'a'`` : :class:`Selector` of type ``tx_cellstate`` addressing the origin state.
+            * ``'b'`` : :class:`Selector` of type ``tx_cellstate`` addressing the destination state.
+            * ``'func'`` : sympy.core.expr.Expr expression of constants and selectors describing the linkage.
+
+    CytokineLink : dict
+        Dictionary describing a linkage between a tx_cell and a cytokine (e.g. for secretion or sinking)
+        CytokineLink has the following structure:
+            * ``'target_cytokine'`` : :class:`Selector` of type ``cytokine`` addressing the cytokine being linked.
+            * ``'states'`` : list[:class:`Selector`] of type ``tx_cellstate`` addressing the tx_cellstates being linked.
+            * ``'action'`` : str either 'sink' or 'secrete' describing the action of the linkage.
+
+    KillLink : dict
+        Dictionary describing a linkage between some tx_cellstates and a cell killed by those tx_cellstates.
+        KillLink has the following structure:
+            * ``'target'`` : :class:`Selector` of type 'cells'
+            * ``'killer_states'`` list[:class:`Selector`] of type 'tx_cellstate'
+
+    BioLink : dict
+        Dictionary describing a generic, custom linkage between two :class:`Selector` objects.
+        BioLink has the following structure:
+            * ``'a'`` : :class:`Selector` addressing the origin entity.
+            * ``'b'`` : :class:`Selector` addressing the destination entity.
+            * ``'func'`` : sympy.core.expr.Expr in terms of constants and selectors.
+
+    Attributes
+    __________
+    compartments : list[str]
+        List of unique compartment names. Linkages specified by :class:`.compartment_linkages`.
+    compartment_linkages : list[tuple[str]]
+        List of 2-tuples of strings each describing a linkage between two compartments in :class:`.compartments`
+    tx_cells : list[dict]
+        List containing specifications of each therapeutic celltype in the model (e.g. CAR-T cells).
+        Each dictionary contains the following keys and structure:
+            * ``'name'`` (str) unique name.
+            * ``'states'`` (list[str]) list of names of binary states (e.g. 'primed', 'activated')
+            * ``'state_linkages'`` (list[:class:`StateLink`]) list describing linkages between states.
+            * ``'daughter_state'`` (list[tuple[str]]) list of 2-tuples addressing the cellstate yielded by proliferation.
+            * ``'cytokine_linkages'`` (list[:class:`CytokineLink`]) list describing linkages with cytokines.
+            * ``'killing_linkages'`` (list[:class:`KillLink`]) list describing what the tx cell can kill.
+    cells : list[dict]
+        List describing the ordinary celltypes as ``dict`` objects with structure:
+            * ``'name'`` : Unique name
+            * ``'compartment'`` : Name of the compartment in which the cells reside.
+    cytokines : list[str]
+        List describing the cytokines in the model by unique names.
+    interactions : list[:class:`SingleSelector`]
+        List of custom interactions to add to the model.
+    """
 
     def __init__(self):
-        self.compartments = []  # unique compartment names
-        self.compartment_linkages = []  # tuples of compartment names
-
+        self.compartments = []
+        self.compartment_linkages = []
         self.tx_cells = []
-        # tx celltypes represented as dictionaries with:
-        # 'name' : name
-        # 'states' : ['state1', 'state2', ...]
-        # 'state_linkages' : [statelink1, statelink2, ...]
-        # 'daughter_state' : [('state1', 0), ('state2', 0), ...]
-        # 'cytokine_linkages' : [cytokineLink1, cytokineLink2, ...]
-        # 'killing_linkages' : [killLink1, killLink2, ...]
-
         self.cells = []
-        # normal celltypes are representated as dictionaries with:
-        # 'name' : name
-        # 'compartment' : compartment_name
-
         self.cytokines = []
-        # cytokines represented as dictionaries with:
-        # 'name' : name
-
         self.interactions = []
-        # custom interactions may be defined using a dictionary representation
-        # 'a' : SingleSelector
-        # 'b' : SingleSelector
-        # 'func' : sympy expression of constants and single selectors
 
-    # Adding Elements - Add instance to relevant dict
     def add_compartment(self, name):
+        """Add a compartment to the model."""
         self.compartments.append(name)
 
     def link_compartments(self, a, b):
+        """Add a compartment linkage to the model."""
         self.compartment_linkages.append((a, b))
 
     def add_tx_cells(self, name, states, state_linkages=[], daughter_state=[], cytokine_linkages=[], killing_linkages=[]):
+        """Add a type of therapeutic cells to the model."""
         c = {}
         c['name'] = name
         c['states'] = states
@@ -56,17 +99,20 @@ class BioLayer:
         self.tx_cells.append(c)
 
     def add_cells(self, name, compartment):
+        """Add a type of non-therapeutic cell to the model (e.g. tumor or normal cells)."""
         c = {}
         c['name'] = name
         c['compartment'] = compartment
         self.cells.append(c)
 
     def add_cytokine(self, name):
+        """Add a type of cytokine to the model."""
         c = {}
         c['name'] = name
         self.cytokines.append(c)
 
     def add_interaction(self, a, b, func):
+        """Add a custom interaction to the model."""
         i = {}
         i['a'] = a
         i['b'] = b
@@ -74,12 +120,26 @@ class BioLayer:
         self.interactions.append(i)
 
     def validate_selector(self, selector):
-
+        """Validate that a selector actually addresses something in the BioLayer."""
         # TODO: Implement selector validation
         return True
 
     # SELECTOR Getters - get a selector for something
     def get_tx_celltype(self, name):
+        """
+        Get a :class:`Selector` addressing a therapeutic celltype.
+
+        Parameters
+        ----------
+        name : str
+            Name of the tx_celltype.
+
+        Returns
+        -------
+        :class:`Selector` of type `tx_celltype`
+            Selector addressing the desired therapeutic celltype.
+
+        """
         kind = 'tx_celltype'
         cs = {}
         cs['type'] = kind
@@ -90,6 +150,22 @@ class BioLayer:
         return Selector(selector_name, kind, cs)
 
     def get_tx_cellstate(self, name, state):
+        """
+        Get a :class:`Selector` addressing a therapeutic cellstate.
+
+        Parameters
+        ----------
+        name : str
+            Name of the tx_celltype
+        state : list[tuple]
+            List of 2-tuples addressing a unique state of the tx_celltype
+
+        Returns
+        -------
+        :class:`Selector` of type 'tx_cellstate'
+            Selector addressing the desired state of the desired therapeutic celltype.
+        """
+
         kind = 'tx_cellstate'
         cs = {}
         cs['type'] = kind
@@ -143,11 +219,6 @@ class BioLayer:
 
     def add_tx_state_linkage(self, tx_cell_name, a, b, func):
         target = self.get_species('tx_cell', tx_cell_name)
-        # stateLink:
-        # 'a' : selector of type 'tx_cellstate'
-        # 'b' : selector of type 'tx_cellstate'
-        # 'c' : sympy expression of constants and selectors
-
         stateLink = {}
         stateLink['a'] = a
         stateLink['b'] = b
@@ -160,10 +231,6 @@ class BioLayer:
 
     def add_tx_cell_killtarget(self, tx_cell_name, target_cells, killer_states):
         target = self.get_species('tx_cell', tx_cell_name)
-        # killLink:
-        # 'target' : selector of type 'cells'
-        # 'killer_states' = array of selectors of type 'tx_cellstate'
-
         # The states might be passed as a selector, e.g. from get_tx_cellstate.
         # If this is the case, need to extract the arrays.
         comp_states = []
