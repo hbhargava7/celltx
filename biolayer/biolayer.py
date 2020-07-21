@@ -312,6 +312,10 @@ class BioLayer:
         return out
 
     def convert_bio_sel_to_sys(self, sys, selector, compartment_override=None):
+        """
+        Convert a BioLayer selector into a SysLayer compartible one
+        """
+
         # map every biolayer selector type onto a syslayer relationship
         cs = selector.selector
         biolayer_sel_type = cs['type']
@@ -339,16 +343,31 @@ class BioLayer:
             warn('BioLayer was was unable to convert selector type %s to sys' % biolayer_sel_type)
 
     def convert_bio_func_to_sys(self, sys, func, compartment_context=None):
-        # map a biolayer expression (func) onto a syslayer compatible one
-        # i.e., convert each selector within the expression to a syslayer compatible one
-        # and leave the constants as is
-        # ALGORITHM
-        # For each term in expr.args:
-        # if it's a constant, leave it
-        # if it's a selector, convert it via above method and substitute
-        # if it's an expression, pass rescursively to this function and substitute
+        """
+        Convert a :class:`BioLayer` level selector into a :class:`SysLayer` level selector.
 
-        # TODO: I have no clue if this recursion is going to work.
+        Parameters
+        ----------
+        sys : :class:`SysLayer`
+            SysLayer that has been initialized and populated with elements that will be used to validate selectors.
+        func : sympy.core.expr.Expr
+            Expr in terms of BioLayer Selectors and Constants
+        compartment_context : bool
+            Override the compartment context while converting the function
+
+        Returns
+        -------
+        Sympy.core.expr.Expr
+            The converted expression
+
+        Algorithm
+        ---------
+        For each term in func.args:
+            * if it's a constant, leave it alone
+            * If it's a selector, convert it via :meth:`convert_bio_sel_to_sys` and substitute
+            * If it's an expr, recurse and substitute.
+        """
+
         for arg in func.args:
             if isinstance(arg, Selector):
                 # term is a biolayer selector, convert to syslayer selector
