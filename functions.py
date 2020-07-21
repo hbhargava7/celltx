@@ -48,5 +48,15 @@ class Constant(sy.Symbol):
         return state
 
 
+def ravel_expression(expr):
+    args = []
+    for arg in expr.args:
+        if isinstance(arg, Selector) or isinstance(arg, Constant):
+            args.append(arg)
+        else:
+            args = args + ravel_expression(arg)
+    return args
+
+
 def hill(x, kmin, kmax, x50, n):
     return kmin + (kmax - kmin) / (1 + ((x50) / (x)) ** n)

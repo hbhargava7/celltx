@@ -451,7 +451,7 @@ class BioLayer:
                     a = sys.get_element_state('tx_cell', tx_cell['name'], compartment, state)
                     b = sys.get_element_state('tx_cell', tx_cell['name'], compartment, tx_cell['daughter_state'])
                     func = a*Constant('k_proliferation', 10)
-                    sys.add_relationship('prolif', a, b, func)
+                    sys.add_relationship('proliferation', a, b, func)
 
             # state changes - for each compartment, join each state to relevant other states based on state_linkages
             for compartment in self.compartments:
@@ -498,7 +498,7 @@ class BioLayer:
 
         for cell in self.cells:
             a = sys.get_element('cell', cell['name'], cell['compartment'])
-            pro_func = a*Constant('k_proliferation', 10)
+            pro_func = a*Constant('k_cell_proliferation', 10)
             sys.add_relationship('proliferation', a, a, pro_func)
 
             death_func = -a*self.constant('k_death', 5)

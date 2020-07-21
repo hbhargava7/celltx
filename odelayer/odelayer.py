@@ -1,5 +1,6 @@
 import numpy as np
 import sympy as sy
+from sympy.utilities.lambdify import lambdastr
 from scipy.integrate import odeint
 
 from ..functions import Selector, Constant
@@ -12,6 +13,7 @@ class ODELayer():
         self.f_model = None
         self.args = None
         self.params = None
+        self.lambda_string = None
 
     def ravel_expression(self, expr):
         args = []
@@ -70,15 +72,34 @@ class ODELayer():
         self.args = unique_sels
         self.params = unique_consts
 
+        # We need the rhss in the same order as the same order as the unique_sels to pass to lambdify.
+        ordered_rhss = []
+
+        for arg in unique_sels:
+            for eq in self.equations:
+                if eq.lhs.args[0].selector is arg.selector:
+                    ordered_rhss.append(eq.rhs)
+
         unique_args = unique_sels + unique_consts
 
-        self.f_model = sy.lambdify(unique_args, rhss)
+        self.f_model = sy.lambdify(unique_args, ordered_rhss)
+        self.lambda_string = lambdastr(unique_args, ordered_rhss)
 
     def model(self, X, t, args):
-        X = [0 if foo < 0 else foo for foo in X]
+        # X = [0 if foo < 0 else foo for foo in X]
         in_vals = np.concatenate((X, args))
+
         out = self.f_model(*in_vals)
-        return out
+
+        # If the current value of a var is 0, don't let the differential be less than zero
+        new_out = []
+        for i, val in enumerate(out):
+            if X[i] == 0 and val < 0:
+                new_out.append(0)
+            else:
+                new_out.append(val)
+
+        return new_out
 
     def split_parameter(self, parameter):
         pass

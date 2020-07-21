@@ -154,7 +154,7 @@ class GraphLayer():
 			# For each edge originating from the node, subtract edge functions if destination node is same type and name
 			for edge in self.out_edges_for_node(G, node):
 				try:
-					if edge[2]['func'].args[0].name is 'k_proliferation':
+					if edge[2]['func'].args[0].name is 'k_proliferation' or edge[2]['func'].args[0].name is 'tx_activ_prolif':
 						warn("WARNING: used extremely hacked up protection clause to not subtract proliferation")
 						continue
 				except:
