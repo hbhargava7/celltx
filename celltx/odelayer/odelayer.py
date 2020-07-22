@@ -99,11 +99,8 @@ class ODELayer():
         self.lambda_string = lambdastr(unique_args, ordered_rhss)
 
     def model(self, X, t, args):
-        # X = [0 if foo < 0 else foo for foo in X]
         in_vals = np.concatenate((X, args))
-
         out = self.f_model(*in_vals)
-
         # If the current value of a var is 0, don't let the differential be less than zero
         new_out = []
         for i, val in enumerate(out):
