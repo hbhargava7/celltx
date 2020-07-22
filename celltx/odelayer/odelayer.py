@@ -80,10 +80,16 @@ class ODELayer():
         # We need the rhss in the same order as the same order as the unique_sels to pass to lambdify.
         ordered_rhss = []
 
+        # In the process, we will rearrange self.equations to be in the same order.
+        ordered_equations = []
+
         for arg in unique_sels:
             for eq in self.equations:
                 if eq.lhs.args[0].selector is arg.selector:
                     ordered_rhss.append(eq.rhs)
+                    ordered_equations.append(eq)
+
+        self.equations = ordered_equations
 
         unique_args = unique_sels + unique_consts
 
