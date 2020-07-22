@@ -3,6 +3,7 @@
 # University of California, San Francisco
 
 import numpy as np
+from numba import njit
 import sympy as sy
 from sympy.utilities.lambdify import lambdastr
 from scipy.integrate import odeint
@@ -94,6 +95,7 @@ class ODELayer():
         unique_args = unique_sels + unique_consts
 
         self.f_model = sy.lambdify(unique_args, ordered_rhss)
+        self.f_model = njit(self.f_model)
         self.lambda_string = lambdastr(unique_args, ordered_rhss)
 
     def model(self, X, t, args):
