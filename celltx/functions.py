@@ -1,5 +1,5 @@
 # Copyright 2020 Hersh K. Bhargava (https://hershbhargava.com)
-# Laboratories of Hana El-Samad and Wendell Lim
+# Laboratories of Hana El-Samad and Wendell A. Lim
 # University of California, San Francisco
 
 import sympy as sy
