@@ -7,8 +7,14 @@ from numba import njit
 import sympy as sy
 from sympy.utilities.lambdify import lambdastr
 from scipy.integrate import odeint
+from smt.sampling_methods import LHS
+from tqdm import tqdm
+import math, time
+import numbers
+import multiprocessing as mp
 
 from ..functions import Selector, Constant
+from ..util import format_timedelta
 
 
 class ODELayer():
@@ -169,15 +175,77 @@ class ODELayer():
                 new.expr = val
                 self.params[i] = new
 
-    def set_search_range(self, param, rnge):
-        self.search_ranges[param.name] = rnge
+    def set_search_range(self, param_name, rnge):
+        self.search_ranges[param_name] = rnge
 
-    def execute_paramspace_search(self, t, n_samples, method='LHS'):
+    def execute_paramspace_search(self, t, n_samples, parallel, method='LHS'):
         """
         Sample parameter values from parameter-specific ranges specified in self.search_ranges (dict) and simulate.
         Parameters that don't have an entry in self.search_ranges are not to be sampled.
         """
+        print('Generating %i samples from the %i dimensional parameter space.' % (n_samples, len(self.params)))
+        parameter_sets = self.gen_paramspace_samples(int(n_samples))
 
+        print('Running parallel simulations on %i processors' % parallel)
+        tic = time.time()
+
+        chunked_paramsets = self.chunks(parameter_sets, parallel)
+
+        manager = mp.Manager()
+        reservoir = manager.list()
+
+        jobs = []
+
+        for i, chk in enumerate(tqdm(chunked_paramsets)):
+            proc = mp.Process(target=self.process_paramset_chunk, args=(chk, reservoir, t))
+            jobs.append(proc)
+            proc.start()
+
+        for process in jobs:
+            process.join()
+            process.terminate()
+
+        print("Finished all simulations in: %s" % format_timedelta(time.time() - tic))
+        a = list(reservoir)
+
+        return a
+
+    def process_paramset_chunk(self, chk, out, t):
+        for parameter_set in tqdm(chk):
+            output = []
+            try:
+                result = odeint(self.model, self.x0, t, args=(parameter_set,))
+                output = [parameter_set, result]
+            except Exception as e:
+                print('ODELayer encountered exception while integrating: %s' % e)
+                output = [parameter_set, e]
+            out.append(output)
+
+
+    def chunks(self, lst, nChunks):
+        """Divide a list into n lists where all chunks have even size, except for the last one, which is smaller."""
+        out = []
+        chunkSize = math.floor(len(lst) / nChunks)
+        for i in range(0, nChunks):
+            start = i * chunkSize
+            if i == nChunks - 1:
+                out.append(lst[start:])
+            else:
+                out.append(lst[start:start + chunkSize])
+        return out
+
+    def gen_paramspace_samples(self, n_samples):
+        """Use Latin Hypercube Sampling to generate samples of the parameter space (looking at self.search_ranges)"""
+        ranges = []
+        for param in self.params:
+            if param.name in self.search_ranges:
+                ranges.append(self.search_ranges[param.name])
+            else:
+                ranges.append([param.expr, param.expr])
+        ranges = np.array(ranges)
+        s = LHS(xlimits=ranges)
+        param_sets = s(n_samples)
+        return param_sets
 
 
     def display_args(self):
