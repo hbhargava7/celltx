@@ -119,7 +119,7 @@ class ODELayer():
         self.ordered_rhss = ordered_rhss
         self.f_model = sy.lambdify(unique_args, ordered_rhss)
         self.f_model = njit(self.f_model)
-        self.lambda_string = lambdastr(unique_args, ordered_rhss)
+        self.lambda_string = lambdastr(unique_args, ordered_rhss, dummify=True)
 
         # Also generate starting conditions self.x0 (zeros for each species)
         self.x0 = np.zeros(len(self.species))

@@ -5,6 +5,6 @@
 """
 Cell Therapy: Cell CAD framework for dynamically constructing and evaluating multiscale models of cell therapies.
 
-__version__ = '0.0.1'
-
 """
+
+__version__ = '0.0.1'
