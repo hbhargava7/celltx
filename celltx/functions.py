@@ -15,6 +15,9 @@ class Selector(sy.Symbol):
         var.domain = domain
         return var
 
+    def __getnewargs__(self):
+        return self.name, self.selector_type, self.selector, self.latex, self.domain
+
     def _latex(self, printer):
         if self.latex is not None:
             return self.latex
@@ -36,6 +39,9 @@ class Constant(sy.Symbol):
         var.domain = domain
         var.selector = name
         return var
+
+    def __getnewargs__(self):
+        return self.name, self.expr, self.latex, self.domain
 
     def _latex(self, printer):
         if self.latex is not None:

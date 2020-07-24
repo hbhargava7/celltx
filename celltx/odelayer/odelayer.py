@@ -10,6 +10,7 @@ from scipy.integrate import odeint
 from smt.sampling_methods import LHS
 from tqdm import tqdm
 import math, time
+import sys
 import numbers
 import multiprocessing as mp
 
@@ -25,6 +26,7 @@ class ODELayer():
         self.species = None
         self.params = None
         self.lambda_string = None
+        self.ordered_rhss = None
         self.x0 = None
         self.search_ranges = {}
 
@@ -114,7 +116,7 @@ class ODELayer():
         self.equations = ordered_equations
 
         unique_args = unique_sels + unique_consts
-
+        self.ordered_rhss = ordered_rhss
         self.f_model = sy.lambdify(unique_args, ordered_rhss)
         self.f_model = njit(self.f_model)
         self.lambda_string = lambdastr(unique_args, ordered_rhss)
@@ -183,10 +185,10 @@ class ODELayer():
         Sample parameter values from parameter-specific ranges specified in self.search_ranges (dict) and simulate.
         Parameters that don't have an entry in self.search_ranges are not to be sampled.
         """
-        print('Generating %i samples from the %i dimensional parameter space.' % (n_samples, len(self.params)))
+        print('celltx ODELayer: Generating %i samples from the %i dimensional parameter space.' % (n_samples, len(self.params)))
         parameter_sets = self.gen_paramspace_samples(int(n_samples))
 
-        print('Running parallel simulations on %i processors' % parallel)
+        print('celltx ODELayer: Running parallel simulations on %i processors.' % parallel)
         tic = time.time()
 
         chunked_paramsets = self.chunks(parameter_sets, parallel)
@@ -196,8 +198,8 @@ class ODELayer():
 
         jobs = []
 
-        for i, chk in enumerate(tqdm(chunked_paramsets)):
-            proc = mp.Process(target=self.process_paramset_chunk, args=(chk, reservoir, t))
+        for i, chk in enumerate(chunked_paramsets):
+            proc = mp.Process(target=self.process_paramset_chunk, args=(chk, reservoir, t, i))
             jobs.append(proc)
             proc.start()
 
@@ -205,13 +207,15 @@ class ODELayer():
             process.join()
             process.terminate()
 
-        print("Finished all simulations in: %s" % format_timedelta(time.time() - tic))
+        print("celltx ODELayer: Finished all simulations in: %s." % format_timedelta(time.time() - tic))
         a = list(reservoir)
 
         return a
 
-    def process_paramset_chunk(self, chk, out, t):
-        for parameter_set in tqdm(chk):
+    def process_paramset_chunk(self, chk, out, t, i):
+        pbar = tqdm(chk, position=i,file=sys.stdout)
+        pbar.set_description('Processor %i Progress' % (i+1))
+        for parameter_set in pbar:
             output = []
             try:
                 result = odeint(self.model, self.x0, t, args=(parameter_set,))
@@ -246,7 +250,6 @@ class ODELayer():
         s = LHS(xlimits=ranges)
         param_sets = s(n_samples)
         return param_sets
-
 
     def display_args(self):
         print("MODEL ARGUMENTS (index | name | initial value)")
