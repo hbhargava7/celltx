@@ -119,6 +119,7 @@ class ODELayer():
         self.ordered_rhss = ordered_rhss
         self.f_model = sy.lambdify(unique_args, ordered_rhss)
         self.f_model = njit(self.f_model)
+        print("celltx ODELayer: Successfully compiled self.f_model to C via njit.")
         self.lambda_string = lambdastr(unique_args, ordered_rhss, dummify=True)
 
         # Also generate starting conditions self.x0 (zeros for each species)
@@ -207,7 +208,7 @@ class ODELayer():
             process.join()
             process.terminate()
 
-        print("celltx ODELayer: Finished all simulations in: %s." % format_timedelta(time.time() - tic))
+        print("celltx ODELayer: Finished all %i simulations in: %s." % (int(n_samples), format_timedelta(time.time() - tic)))
         a = list(reservoir)
 
         return a
@@ -252,7 +253,7 @@ class ODELayer():
         return param_sets
 
     def display_args(self):
-        print("MODEL ARGUMENTS (index | name | initial value)")
+        print("MODEL SPECIES (index | name | initial value)")
         for i, arg in enumerate(self.species):
             print("%i | %s | %s" % (i, arg, str(self.x0[i])))
 
