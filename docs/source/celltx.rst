@@ -31,6 +31,14 @@ celltx.model module
    :undoc-members:
    :show-inheritance:
 
+celltx.util module
+------------------
+
+.. automodule:: celltx.util
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 
 Module contents
 ---------------
