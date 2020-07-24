@@ -16,11 +16,25 @@ class ODELayer():
     def __init__(self, equations):
         self.equations = equations
         self.f_model = None
-        self.args = None
+        self.species = None
         self.params = None
         self.lambda_string = None
+        self.x0 = None
+        self.search_ranges = {}
 
     def ravel_expression(self, expr):
+        """
+        Given a Sympy expression, return an array of all arguments (selectors and constant) in the expression.
+
+        Parameters
+        ----------
+        expr : Sympy.core.expr.Expr
+            Expression to be unravelled.
+
+        Returns
+        -------
+        list[Selector or Constant]
+        """
         args = []
         for arg in expr.args:
             if isinstance(arg, Selector) or isinstance(arg, Constant):
@@ -29,15 +43,16 @@ class ODELayer():
                 args = args + self.ravel_expression(arg)
         return args
 
-    def list_parameters(self):
-        constants = []
-        for eq in self.equations:
-            for term in self.ravel_expression(eq.rhs):
-                if isinstance(term, Constant):
-                    constants.append(term)
-        return list(set(constants))
-
     def gen_ode_model(self):
+        """
+        Generate a lambda (self.f_model) from the Sympy expressions in self.equations that takes the values for all
+        species and parameters and returns dX/dt.
+
+        Returns
+        -------
+        None
+        """
+
         # Prune any term from an equation that is not either a constant or the LHS of another equation.
         pruned_eqs = []
         lhs = [eq.lhs.args[0] for eq in self.equations]
@@ -75,7 +90,7 @@ class ODELayer():
             else:
                 print('unable to handle %s' % val)
 
-        self.args = unique_sels
+        self.species = unique_sels
         self.params = unique_consts
 
         # We need the rhss in the same order as the same order as the unique_sels to pass to lambdify.
@@ -98,7 +113,29 @@ class ODELayer():
         self.f_model = njit(self.f_model)
         self.lambda_string = lambdastr(unique_args, ordered_rhss)
 
+        # Also generate starting conditions self.x0 (zeros for each species)
+        self.x0 = np.zeros(len(self.species))
+
     def model(self, X, t, args):
+        """
+        Return the derivative of the system based on current state, desired timepoint, and param values.
+        Effectively a wrapper for the lambda self.f_model that, for instance, prevents species from having negative values.
+
+        Parameters
+        ----------
+        X : list[float]
+            List of values for all species in the model, in the same order as self.species.
+        t : float
+            Time at which the differential is being evaluated.
+        args : list[float]
+            List of values for all parameters in the model, in the same order as self.params.
+
+        Returns
+        -------
+        list[float]
+            Derivative of the value of each species in the model, in the same order as self.species.
+        """
+
         in_vals = np.concatenate((X, args))
         out = self.f_model(*in_vals)
         # If the current value of a var is 0, don't let the differential be less than zero
@@ -111,10 +148,42 @@ class ODELayer():
 
         return new_out
 
+    def integrate(self, t):
+        """
+        Integrate the model at timepoints in t using literal parameter values.
+
+        """
+        # Assemble the parameter values into a list.
+        params = [float(param.expr) for param in self.params]
+
+        x = odeint(self.model, self.x0, t, args=(params,))
+        return x
+
+    def set_initial_value(self, idx, val):
+        self.x0[idx] = val
+
+    def set_param_value(self, name, val):
+        for i, param in enumerate(self.params):
+            if param.name is name:
+                new = param
+                new.expr = val
+                self.params[i] = new
+
+    def set_search_range(self, param, rnge):
+        self.search_ranges[param.name] = rnge
+
+    def execute_paramspace_search(self, t, n_samples, method='LHS'):
+        """
+        Sample parameter values from parameter-specific ranges specified in self.search_ranges (dict) and simulate.
+        Parameters that don't have an entry in self.search_ranges are not to be sampled.
+        """
+
+
+
     def display_args(self):
-        print("MODEL ARGUMENTS (index | name)")
-        for i, arg in enumerate(self.args):
-            print("%i | %s" % (i, arg))
+        print("MODEL ARGUMENTS (index | name | initial value)")
+        for i, arg in enumerate(self.species):
+            print("%i | %s | %s" % (i, arg, str(self.x0[i])))
 
         print("\nMODEL PARAMETERS (index | name | value)")
         for i, param in enumerate(self.params):
@@ -126,8 +195,4 @@ class ODELayer():
     def link_parameters(self, a, b):
         pass
 
-    def set_initial_value(self, param, value):
-        pass
 
-    def integrate(self):
-        pass
