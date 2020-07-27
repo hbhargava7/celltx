@@ -55,6 +55,11 @@ After cloning this repository, issue the following command from the root directo
 python setup.py install
 ```
 
+Or better yet, using `pip`:
+```
+pip install .
+```
+
 **Building Documentation**
 
 The documentation is managed with Sphinx. To build the documentation, issue the following from the 
