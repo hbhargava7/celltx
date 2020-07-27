@@ -44,3 +44,28 @@ The ODE layer describes the behavior of a biological system over time in the for
 
 - The derivative of the magnitude of an entity is given by a linear combination of the edge functions pointing to that entity node.
 - There will be as many equations as there are nodes in the system.
+
+## Installation
+
+**Installing the Package**
+
+After cloning this repository, issue the following command from the root directory.
+
+`python setup.py install`
+
+**Building Documentation**
+
+The documentation is managed with Sphinx. To build the documentation, issue the following from the 
+root directory.
+
+`
+cd docs
+make html
+`
+
+To regenerate the docs automatically from from the docstrings, use `sphinx-apidoc`:
+
+`
+cd docs
+sphinx-apidoc -o source/ ../celltx/
+`
