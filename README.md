@@ -51,21 +51,23 @@ The ODE layer describes the behavior of a biological system over time in the for
 
 After cloning this repository, issue the following command from the root directory.
 
-`python setup.py install`
+```
+python setup.py install
+```
 
 **Building Documentation**
 
 The documentation is managed with Sphinx. To build the documentation, issue the following from the 
 root directory.
 
-`
+```
 cd docs
 make html
-`
+```
 
 To regenerate the docs automatically from from the docstrings, use `sphinx-apidoc`:
 
-`
+```
 cd docs
 sphinx-apidoc -o source/ ../celltx/
-`
+```
