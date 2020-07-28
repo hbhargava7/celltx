@@ -57,13 +57,12 @@ class GraphLayer():
 		if state is not None:
 			cs['state'] = state
 
-
 		selector_name = '[%s].[%s].[%s].[%s].[%s]' % (selector_type, type, name, compartment, state)
-		selector_latex = '\\text{[%s].[%s].[%s].[%s].[%s]}' % (selector_type, type, name, compartment, state)
+		selector_latex = '\\text{[%s].[%s].[%s].[%s]}' % (type, name, compartment, state)
 
 		if state is None:
 			selector_name = '[%s].[%s].[%s].[%s]' % (selector_type, type, name, compartment)
-			selector_latex = '\\text{[%s].[%s].[%s].[%s]}' % (selector_type, type, name, compartment)
+			selector_latex = '\\text{[%s].[%s].[%s]}' % (type, name, compartment)
 
 		selector = Selector(selector_name, selector_type, cs, latex=selector_latex)
 

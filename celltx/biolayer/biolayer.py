@@ -146,8 +146,8 @@ class BioLayer:
         cs['name'] = name
 
         selector_name = '[%s].[%s]' % (kind, name)
-
-        return Selector(selector_name, kind, cs)
+        selector_latex = '\\text{[%s].[%s]}' % (kind, name)
+        return Selector(selector_name, kind, cs, latex=selector_latex)
 
     def get_tx_cellstate(self, name, state):
         """
@@ -172,8 +172,9 @@ class BioLayer:
         cs['name'] = name
         cs['state'] = state
         selector_name = '[%s].[%s].[%s]' % (kind, name, state)
+        selector_latex = '\\text{[%s].[%s].[%s]}' % (kind, name, state)
 
-        return Selector(selector_name, kind, cs)
+        return Selector(selector_name, kind, cs, latex=selector_latex)
 
     def get_cells(self, name, compartment=None):
         kind = 'cell'
@@ -184,8 +185,9 @@ class BioLayer:
             cs['compartment'] = compartment
 
         selector_name = '[%s].[%s].[%s]' % (kind, name, compartment)
+        selector_latex = '\\text{[%s].[%s].[%s]}' % (kind, name, compartment)
 
-        return Selector(selector_name, kind, cs)
+        return Selector(selector_name, kind, cs, latex=selector_latex)
 
     def get_cytokine(self, name, compartment=None):
         kind = 'cytokine'
@@ -196,8 +198,9 @@ class BioLayer:
             cs['compartment'] = compartment
 
         selector_name = '[%s].[%s].[%s]' % (kind, name, compartment)
+        selector_latex = '\\text{[%s].[%s].[%s]}' % (kind, name, compartment)
 
-        return Selector(selector_name, kind, cs)
+        return Selector(selector_name, kind, cs, latex=selector_latex)
 
     # SPECIES Getters - get something from one of self.x based on name and type
     def get_species(self, type, name):

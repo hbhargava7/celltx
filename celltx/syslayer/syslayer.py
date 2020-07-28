@@ -61,8 +61,8 @@ class SysLayer:
         cs['target_compartment'] = compartment
 
         selector_name = '[%s].[%s].[%s].[%s]' % (selector_type, kind, name, compartment)
-
-        selector = Selector(selector_name, selector_type, cs)
+        selector_latex = '\\text{[%s].[%s].[%s].[%s]}' % (selector_type, kind, name, compartment)
+        selector = Selector(selector_name, selector_type, cs, latex=selector_latex)
 
         if self.validate_selector(selector):
             return selector
@@ -81,8 +81,9 @@ class SysLayer:
         cs['target_state'] = state
 
         selector_name = '[%s].[%s].[%s].[%s].[%s]' % (selector_type, kind, name, compartment, state)
+        selector_latex = '\\text{[%s].[%s].[%s].[%s]}' % (selector_type, kind, name, compartment)
 
-        selector = Selector(selector_name, selector_type, cs)
+        selector = Selector(selector_name, selector_type, cs, latex=selector_latex)
 
         if self.validate_selector(selector):
             return selector
