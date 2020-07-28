@@ -261,10 +261,45 @@ class ODELayer():
         for i, param in enumerate(self.params):
             print("%i | %s | %.2f" % (i, param, param.expr))
 
-    def split_parameter(self, parameter):
-        pass
+    def profile_parameter(self, param_name, values, t):
+        """
+        Profile the model behavior for timeframe t across values of a parameter in `values` array.
 
-    def link_parameters(self, a, b):
-        pass
+        Parameters
+        ----------
+        name : str
+            Name of the parameter to investigate
 
+        values : numpy.ndarray[numpy.float64]
+            Values of the parameter to investigate
 
+        t : np.ndarray[numpy.float64]
+            Timepoint(s) at which to report the state of the model
+
+        Returns
+        -------
+        np.ndarray[np.ndarray]
+            Array of arrays, one for each parameter value in `values`, reporting the model state at times in `t`.
+
+        """
+        # Setup the default parameter array
+        idx_of_target_param = None
+        params = []
+        for idx, param in enumerate(self.params):
+            params.append(param.expr)
+            if param.name == param_name:
+                idx_of_target_param = idx
+
+        # For each parameter value
+        final = []
+        print('celltx ODELayer executing parameter profile simulations for parameter %s.' % param_name)
+        for value in tqdm(values):
+            try:
+                params[idx_of_target_param] = value
+                result = odeint(self.model, self.x0, t, args=(params,))
+                output = [value, result]
+                final.append(output)
+            except:
+                pass
+
+        return final
