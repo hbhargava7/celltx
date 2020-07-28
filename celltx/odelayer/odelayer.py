@@ -252,6 +252,25 @@ class ODELayer():
         param_sets = s(n_samples)
         return param_sets
 
+    def display_equations(self, display_func, substitute=False):
+        """
+        Print out the model equations. Display_func is IPython.display.display.
+        If substituting, for each differential equation, substitute the X in dX/dt in the rhs with 'X' for concision.
+        """
+        if not substitute:
+            for eq in self.equations:
+                display_func(eq)
+        else:
+            substitute_eqs = []
+            for eq in self.equations:
+                X = eq.rhs.args[0]
+                X_symbol = sy.sympify('X')
+                lhs = eq.lhs.subs(X, X_symbol)
+                sub_eq = sy.Eq(sy.Derivative(X, sy.sympify('t')), lhs)
+                substitute_eqs.append(sub_eq)
+            for eq in substitute_eqs:
+                display_func(eq)
+
     def display_args(self):
         print("MODEL SPECIES (index | name | initial value)")
         for i, arg in enumerate(self.species):
