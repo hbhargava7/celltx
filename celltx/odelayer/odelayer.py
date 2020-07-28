@@ -263,10 +263,10 @@ class ODELayer():
         else:
             substitute_eqs = []
             for eq in self.equations:
-                X = eq.rhs.args[0]
-                X_symbol = sy.sympify('X')
-                lhs = eq.lhs.subs(X, X_symbol)
-                sub_eq = sy.Eq(sy.Derivative(X, sy.sympify('t')), lhs)
+                X = eq.lhs.args[0]
+                X_symbol = sy.sympify('X_self')
+                rhs = eq.rhs.subs(X, X_symbol)
+                sub_eq = sy.Eq(sy.Derivative(X, sy.sympify('t')), rhs)
                 substitute_eqs.append(sub_eq)
             for eq in substitute_eqs:
                 display_func(eq)
