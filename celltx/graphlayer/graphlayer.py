@@ -43,9 +43,11 @@ class GraphLayer():
 		e['b'] = b
 		e['func'] = func
 		self.edges.append(e)
+
 	def validate_selector(self, selector):
 		# TODO: Implement validation
 		return True
+
 	def get_node(self, type, name, compartment, state=None):
 		selector_type = 'node'
 

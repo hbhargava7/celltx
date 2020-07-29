@@ -505,12 +505,12 @@ class BioLayer:
             pro_func = None
             if cell['growth_type'] == 'logistic':
                 print("celltx BioLayer: Adding a logistic growth term the cells.")
-                pro_func = a*Constant('k_cell_proliferation', 10)
-            else:
-                print("celltx BioLayer: Adding an exponential growth term to the cells.")
                 k_cell_prolif = Constant('k_cell_prolif', 10)
                 k_cell_carrycap = Constant('k_cell_carrycap', 10)
                 pro_func = k_cell_prolif * a * (1-(1/k_cell_carrycap)*a)
+            else:
+                print("celltx BioLayer: Adding an exponential growth term to the cells.")
+                pro_func = a*Constant('k_cell_proliferation', 10)
 
             sys.add_relationship('proliferation', a, a, pro_func)
 
