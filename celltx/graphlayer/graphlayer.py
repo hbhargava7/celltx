@@ -91,12 +91,13 @@ class GraphLayer():
 				G.add_edge(a, b)
 		return G
 
-	def write_graph_dotfile(self, path, inc_labels=True):
+	def write_graph_dotfile(self, path, inc_labels=True, display=False):
 		graph = self.generate_graph(inc_labels)
 		nx.drawing.nx_agraph.write_dot(graph, path)
-		# !fdp -Tpng -Gdpi=400 graph.dot > graph.png
-		# !open graph.png
-
+		if display:
+			import subprocess
+			cmd = 'fdp -Tpng -Gdpi=400 graph.dot > graph.png; open graph.png'
+			subprocess.run(cmd, shell=True)
 
 	def selfloops_for_node(self, graph, node):
 		sl = nx.selfloop_edges(graph, data=True)
