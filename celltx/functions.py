@@ -35,7 +35,16 @@ class Constant(sy.Symbol):
         var = super().__new__(cls, name, **assumptions)
         expr = sy.sympify(expr)
         var.expr = expr
-        var.latex = latex
+        if latex is None:
+            if len(name) > 2:
+                if name[:2] == 'k_':
+                    var.latex = 'k_{\\text{%s}}' % name[2:]
+                else:
+                    var.latex = latex
+            else:
+                var.latex = latex
+        else:
+            var.latex = latex
         var.domain = domain
         var.selector = name
         return var
