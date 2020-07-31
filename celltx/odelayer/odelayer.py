@@ -315,10 +315,13 @@ class ODELayer():
         for value in tqdm(values):
             try:
                 params[idx_of_target_param] = value
+                params = [float(val) for val in params]
                 result = odeint(self.model, self.x0, t, args=(params,))
                 output = [value, result]
                 final.append(output)
-            except:
+            except Exception as e:
+                # output = [value, e]
+                # final.append(output)
+                # print("celltx ODELayer encountered exception while evaluating model: %s" % e)
                 pass
-
         return final
