@@ -326,3 +326,56 @@ class ODELayer():
                 pass
 
         return final
+
+    def inspect_terms_for_simulation(self, idx, X, t):
+        """
+        Given the output X of a simulation (e.g. from self.integrate), and the index of an equation in `self.equations`,
+        return a dictionary keyed by the `args` of the equation (linearly combined terms) and with values that are
+        arrays with the numerical values of the arg for every timepoint represented in X.
+
+        Parameters
+        ----------
+        idx : int
+            the index of the equation whose args to examine
+        X : list
+            list (1 x n) of lists (m x 1) where n is the number of timepoints and m is the number of equations
+            This has the same format as is returned by self.integrate.
+        t : numpy.ndarray(float64)
+            1 x n array describing the time at each of the timepoints in X. Only really needed if the model takes time
+            as an argument.
+
+        Returns
+        -------
+        list[tuple]
+            List of 2-tuples, in which the first value is the arg and the second is a list of values (1 x n)
+        """
+
+        equation = self.equations[idx]
+        expression = equation.rhs
+
+        output = []
+        for arg in expression.args:
+            output.append((arg, []))
+
+        for tp in range(len(X)):  # for each timepoint
+            for j,arg in enumerate(expression.args):
+                # substitute each term in the arg with the appropriate value.
+                for term in self.ravel_expression(arg):
+                    if isinstance(term, Constant):
+                        arg = arg.subs(term, term.expr)
+                    elif isinstance(term, Selector):
+                        # get the value of the selector at the current timepoint
+                        index = -1
+                        for i, species in enumerate(self.species):
+                            if species.selector == term.selector:
+                                index = i
+                        if index == -1:
+                            warn("An internal error occurred; index == -1")
+                        value = X[tp, index]
+                        arg = arg.subs(term, value)
+                    else:
+                        warn("Found term in equation that is neither selector nor arg.")
+                output[j][1].append(arg)
+
+        return output
+
