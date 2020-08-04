@@ -252,12 +252,13 @@ class BioLayer:
 
     def set_tx_cell_daughter_state(self, tx_cell_name, daughter_state):
         target = self.get_species('tx_cell', tx_cell_name)
-        # daughter_state : selector of type 'tx_cellstate'
+        # daughter_state : selector of type 'tx_cellstate' OR str 'each', indicating attach to self.
 
         # The daughter_state might be passed as a selector, e.g. from get_tx_cellstate.
         # If this is the case, need to extract the array.
         if not isinstance(daughter_state, list):
-            daughter_state = daughter_state.selector['state']
+            if daughter_state != 'each':
+                daughter_state = daughter_state.selector['state']
         target['daughter_state'] = daughter_state
 
     def add_tx_cytokine_interaction(self, tx_cell_name, cytokine, states, action):
@@ -454,6 +455,8 @@ class BioLayer:
                 for state in self.gen_states_for_tx_cell(tx_cell):
                     a = sys.get_element_state('tx_cell', tx_cell['name'], compartment, state)
                     b = sys.get_element_state('tx_cell', tx_cell['name'], compartment, tx_cell['daughter_state'])
+                    if tx_cell['daughter_state'] == 'each':
+                        b = a
                     func = a*Constant('k_proliferation', 10)
                     sys.add_relationship('proliferation', a, b, func)
 
