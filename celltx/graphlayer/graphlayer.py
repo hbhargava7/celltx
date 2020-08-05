@@ -98,7 +98,7 @@ class GraphLayer():
 		nx.drawing.nx_agraph.write_dot(graph, path)
 		if display:
 			import subprocess
-			cmd = 'fdp -Tpng -Gdpi=400 graph.dot > graph.png; open graph.png'
+			cmd = 'dot -Tpng -Gdpi=400 graph.dot > graph.png; open graph.png'
 			subprocess.run(cmd, shell=True)
 
 	def selfloops_for_node(self, graph, node):
