@@ -286,7 +286,7 @@ class ODELayer():
 
         Parameters
         ----------
-        name : str
+        param_name : str
             Name of the parameter to investigate
 
         values : numpy.ndarray[numpy.float64]
@@ -322,7 +322,7 @@ class ODELayer():
             except Exception as e:
                 # output = [value, e]
                 # final.append(output)
-                # print("celltx ODELayer encountered exception while evaluating model: %s" % e)
+                print("celltx ODELayer encountered exception while evaluating model: %s" % e)
                 pass
 
         return final
