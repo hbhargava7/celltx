@@ -156,7 +156,7 @@ class GraphLayer():
 			# For each edge originating from the node, subtract edge functions if destination node is same type and name
 			for edge in self.out_edges_for_node(G, node):
 				try:
-					if edge[2]['func'].args[0].name is 'k_proliferation' or edge[2]['func'].args[0].name is 'tx_activ_prolif':
+					if edge[2]['func'].args[0].name == 'k_proliferation' or edge[2]['func'].args[0].name == 'tx_activ_prolif':
 						warn("WARNING: used extremely hacked up protection clause to not subtract proliferation")
 						continue
 				except:
@@ -166,11 +166,11 @@ class GraphLayer():
 					destination_node = node_sels[edge[1]]
 
 					# If it's a state change (same type, name, compartment), subtract the term.
-					if origin_node.selector['target_type'] is destination_node.selector['target_type'] and \
-						origin_node.selector['target_name'] is destination_node.selector['target_name'] and \
-						origin_node.selector['target_compartment'] is destination_node.selector['target_compartment']:
+					if origin_node.selector['target_type'] == destination_node.selector['target_type'] and \
+						origin_node.selector['target_name'] == destination_node.selector['target_name'] and \
+						origin_node.selector['target_compartment'] == destination_node.selector['target_compartment']:
 
-						if destination_node.selector is not origin_node.selector:
+						if destination_node.selector != origin_node.selector:
 
 							node_equation = node_equation - edge[2]['func']
 							# print("Added Term (OUT, statechange rule): %s" % edge[2]['func'])
@@ -182,11 +182,11 @@ class GraphLayer():
 
 
 					# If it's migration (same type, name, state, different compartments), subtract the term.
-					if origin_node.selector['target_type'] is destination_node.selector['target_type'] and \
-							origin_node.selector['target_name'] is destination_node.selector['target_name'] and \
+					if origin_node.selector['target_type'] == destination_node.selector['target_type'] and \
+							origin_node.selector['target_name'] == destination_node.selector['target_name'] and \
 							origin_node.selector['state'] == destination_node.selector['state'] and \
-							origin_node.selector['target_compartment'] is not destination_node.selector['target_compartment']:
-						if destination_node.selector is not origin_node.selector:
+							origin_node.selector['target_compartment'] != destination_node.selector['target_compartment']:
+						if destination_node.selector != origin_node.selector:
 							node_equation = node_equation - edge[2]['func']
 							# print("Added Term (OUT, migration rule): %s" % edge[2]['func'])
 				except:

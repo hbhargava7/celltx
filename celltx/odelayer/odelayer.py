@@ -173,7 +173,7 @@ class ODELayer():
 
     def set_param_value(self, name, val):
         for i, param in enumerate(self.params):
-            if param.name is name:
+            if param.name == name:
                 new = param
                 new.expr = val
                 self.params[i] = new
