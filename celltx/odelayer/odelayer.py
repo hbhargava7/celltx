@@ -274,11 +274,11 @@ class ODELayer():
     def display_args(self):
         print("MODEL SPECIES (index | name | initial value)")
         for i, arg in enumerate(self.species):
-            print("%i | %s | %s" % (i, arg, str(self.x0[i])))
+            print("%i | %s | %s" % (i, arg, "{:.2e}".format(self.x0[i])))
 
         print("\nMODEL PARAMETERS (index | name | value)")
         for i, param in enumerate(self.params):
-            print("%i | %s | %.2f" % (i, param, param.expr))
+            print("%i | %s | %s" % (i, param, "{:.2e}".format(float(param.expr))))
 
     def profile_parameter(self, param_name, values, t):
         """
