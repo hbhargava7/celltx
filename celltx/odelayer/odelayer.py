@@ -147,14 +147,22 @@ class ODELayer():
 
         in_vals = np.concatenate((X, args))
         out = self.f_model(*in_vals)
+
+        # Hacky solution to the quantization problem
+        # If the sign of the derivative for a species is negative and the value <1, set it and its derivative to 0.
+        # for idx, dx in enumerate(out):
+        #     x_val = X[idx]
+        #     if x_val < 1 and x_val != 0 and dx < 0:
+        #         out[idx] = -1e200
+        #         print('celltx odelayer - quantization rule activated for species at index %i. Time = %f'%(idx, t))
+
         # If the current value of a var is 0, don't let the differential be less than zero
         new_out = []
         for i, val in enumerate(out):
-            if X[i] == 0 and val < 0:
+            if X[i] <= 0 and val < 0:
                 new_out.append(0)
             else:
                 new_out.append(val)
-
         return new_out
 
     def integrate(self, t):
