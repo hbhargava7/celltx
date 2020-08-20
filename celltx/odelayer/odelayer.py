@@ -26,6 +26,7 @@ class ODELayer():
         self.species = None
         self.params = None
         self.lambda_string = None
+        self.unique_args = None
         self.ordered_rhss = None
         self.x0 = None
         self.search_ranges = {}
@@ -116,6 +117,7 @@ class ODELayer():
         self.equations = ordered_equations
 
         unique_args = unique_sels + unique_consts
+        self.unique_args = unique_args
         self.ordered_rhss = ordered_rhss
         self.f_model = sy.lambdify(unique_args, ordered_rhss)
         self.f_model = njit(self.f_model)
