@@ -368,7 +368,7 @@ class ODELayer():
         for arg in expression.args:
             output.append((arg, []))
 
-        for tp in range(len(X)):  # for each timepoint
+        for tp in tqdm(range(len(X))):  # for each timepoint
             for j,arg in enumerate(expression.args):
                 # substitute each term in the arg with the appropriate value.
                 for term in self.ravel_expression(arg):
