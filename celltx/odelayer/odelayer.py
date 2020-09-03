@@ -155,9 +155,10 @@ class ODELayer():
         # If the sign of the derivative for a species is negative and the value <1, set it and its derivative to 0.
         # for idx, dx in enumerate(out):
         #     x_val = X[idx]
-        #     if x_val < 1 and x_val != 0 and dx < 0:
+        #     if x_val < 1 and x_val != 0 and 0 > dx > -1e-100:
         #         out[idx] = -1e200
-        #         print('celltx odelayer - quantization rule activated for species at index %i. Time = %f'%(idx, t))
+        #         print('celltx odelayer - quantization rule activated for species at index %i (value is %f). dx = %f. \
+        #          Time = %f'%(idx, x_val, dx, t))
 
         # If the current value of a var is 0, don't let the differential be less than zero
         new_out = []
