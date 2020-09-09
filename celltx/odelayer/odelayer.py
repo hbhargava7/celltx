@@ -11,8 +11,8 @@ from smt.sampling_methods import LHS
 from tqdm import tqdm
 import math, time
 import sys
-import numbers
 import multiprocessing as mp
+from warnings import warn
 
 from ..functions import Selector, Constant
 from ..util import format_timedelta
@@ -189,6 +189,12 @@ class ODELayer():
                 new = param
                 new.expr = val
                 self.params[i] = new
+
+    def get_param_value(self, name):
+        for param in self.params:
+            if param.name == name:
+                return param.expr
+        warn('celltx ODELayer could not find param with name %s' % name)
 
     def set_search_range(self, param_name, rnge):
         self.search_ranges[param_name] = rnge
