@@ -195,6 +195,7 @@ class BioLayer:
         cs = {}
         cs['type'] = kind
         cs['name'] = name
+
         if compartment:
             cs['compartment'] = compartment
 

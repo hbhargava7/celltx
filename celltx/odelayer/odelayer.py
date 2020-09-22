@@ -183,6 +183,14 @@ class ODELayer():
     def set_initial_value(self, idx, val):
         self.x0[idx] = val
 
+    def set_initial_value_byname(self, name, val):
+        for i, species in enumerate(self.species):
+            if species.name == name:
+                self.x0[i] = val
+                return
+
+        print('celltx.ODELayer: Error finding species %s.' % name)
+
     def set_param_value(self, name, val):
         for i, param in enumerate(self.params):
             if param.name == name:
