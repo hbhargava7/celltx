@@ -169,6 +169,25 @@ class ODELayer():
                 new_out.append(val)
         return new_out
 
+    def index_of_species(self, species_name):
+        """
+        Get the index within `self.species` of the species named `species_name`.
+
+        Parameters
+        ----------
+        species_name
+
+        Returns
+        -------
+        int
+        """
+
+        for i, species in self.species:
+            if species.name == species_name:
+                return i
+        warn('Celltx ODELayer index_of_species was unable to find species named %s in the model.' % species_name)
+
+
     def integrate(self, t):
         """
         Integrate the model at timepoints in t using literal parameter values.
