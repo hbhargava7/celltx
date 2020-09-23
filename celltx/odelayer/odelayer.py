@@ -182,7 +182,7 @@ class ODELayer():
         int
         """
 
-        for i, species in self.species:
+        for i, species in enumerate(self.species):
             if species.name == species_name:
                 return i
         warn('Celltx ODELayer index_of_species was unable to find species named %s in the model.' % species_name)
