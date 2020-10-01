@@ -36,7 +36,10 @@ class Modeller:
         2. Generate model using default options using `self.get_model`.
         3. Configure the model with x0 and initial conditions using `self.get_model_options`.
         """
+        self.model = None
+        self.model_options = None
 
+    def setup(self):
         try:
             self.model_options = {}
             for val in self.get_model_options():
