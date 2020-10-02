@@ -187,6 +187,59 @@ class ODELayer():
                 return i
         warn('Celltx ODELayer index_of_species was unable to find species named %s in the model.' % species_name)
 
+    def integrate_quash_species(self, t, species_idx, threshold=1, target=0):
+        """
+        Goal is to account for the fact that a species in the model should not be able to resurge from a value less than 1.
+
+        Algorithm:
+            1. Integrate `self.model` over timespace `t` as normal.
+            2. Find (if it happens) the timepoint `t_crit` at which species at `species_idx` falls below `threshold`.
+            (after first rising above `threshold` at least once).
+            3. Conduct a new simulation from `t_crit` to `t[-1]`, with species at `species_idx` starting at `target` and all
+            other species in the model starting from their value in the initial simulation at `t_crit`.
+        """
+        from copy import deepcopy
+
+        # Get the initial integral
+        Xi = self.integrate(t)
+        # Iterate through the timecourse of the species of interest.
+        has_risen = False # keep track of whether the species has been > threshold yet (don't trigger if x0 was 0)
+        t_crit = -1
+        for i, val in enumerate(Xi[:, species_idx]):
+            if not has_risen:
+                if val >= threshold:
+                    # Once the species rises above threshold, we are now watching for it to fall back down.
+                    has_risen = True
+            else:
+                # Check if the species has fallen back down
+                if val < threshold:
+                    t_crit = i
+                    # print('found critical value %.2f at timepoint %i' % (val, i))
+                    break
+        # if t_crit is still -1, the species never fell back down.
+        if t_crit == -1:
+            return Xi
+
+        # otherwise, setup a new simulation
+        # store current x0 values
+        x0_archive = deepcopy(self.x0)
+
+        # now assign self.x0 values from t_crit
+        for i in range(Xi.shape[1]):
+            timecourse = Xi[:,i]
+            target_val = timecourse[t_crit]
+            self.x0[i] = target_val
+
+            if i == species_idx:
+                self.x0[i] = target
+
+        X = self.integrate(t[t_crit:])
+
+        Xi[t_crit:] = X
+
+        self.x0 = x0_archive
+
+        return Xi
 
     def integrate(self, t):
         """
