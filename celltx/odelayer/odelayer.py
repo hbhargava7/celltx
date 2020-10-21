@@ -283,6 +283,16 @@ class ODELayer():
         """
         Sample parameter values from parameter-specific ranges specified in self.search_ranges (dict) and simulate.
         Parameters that don't have an entry in self.search_ranges are not to be sampled.
+
+        Parameters
+        ----------
+        t : np.ndarray
+            space of timepoints to profile
+
+        Returns
+        -------
+        list of 2-lists, where list[0] is parameter values (in same order as self.params), and list[1] is a timecourse
+        from self.integrate()
         """
         print('celltx ODELayer: Generating %i samples from the %i dimensional parameter space.' % (n_samples, len(self.params)))
         parameter_sets = self.gen_paramspace_samples(int(n_samples))
@@ -308,6 +318,15 @@ class ODELayer():
 
         print("celltx ODELayer: Finished all %i simulations in: %s." % (int(n_samples), format_timedelta(time.time() - tic)))
         a = list(reservoir)
+
+        # Comprehend l[0] for l in a into a dictionary keyed by self.params names.
+
+        for l in a:
+            param_vals = l[0]
+            d = {}
+            for i, pv in enumerate(param_vals):
+                d[self.params[i].name] = pv
+            l[0] = d
 
         return a
 
