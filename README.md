@@ -2,6 +2,9 @@
 
 > Cell Therapy: Cell CAD framework for dynamically constructing and evaluating multiscale models of cell therapies.
 
+## Status
+[![Documentation Status](https://readthedocs.org/projects/celltx/badge/?version=latest)](https://celltx.readthedocs.io/en/latest/?badge=latest)
+
 ## Abstract
 celltx is a framework for building, visualizing, and simulating multiscale models of live cell therapies. celltx consists of a series of abstraction layers, which bridge model specifications which are biologically intuitive with model representations that are mathematically rigorous and numerically evaluable. At present, celltx converts a set of biological specifications into a directed graph, and further computes a system of differential equations representing the state of the biological system over time from the graph.
 
