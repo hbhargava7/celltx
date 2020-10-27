@@ -1,0 +1,9 @@
+sphinx
+numpy
+scipy
+numba
+smt
+tqdm
+networkx
+sympy
+pygraphviz
