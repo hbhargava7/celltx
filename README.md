@@ -79,3 +79,15 @@ To regenerate the docs automatically from from the docstrings, use `sphinx-apido
 cd docs
 sphinx-apidoc -o source/ ../celltx/
 ```
+
+**Other Useful Tips**
+
+To regenerate the documentation from zero:
+
+```
+cd docs
+rm -rf source/*
+sphinx-apidoc -o source/ ../celltx/
+cp source/celltx.rst source/index.rst
+make html 
+```
