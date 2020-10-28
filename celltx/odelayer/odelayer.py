@@ -407,7 +407,7 @@ class ODELayer():
                         XX = odeint(self.model, x0, t[t_crit:], args=(params,))
 
                         Xi[t_crit:] = XX
-
+                        arg_set[0:len(self.species)] = x0_archive
                         output = [arg_set, Xi]
                 else:
                     result = odeint(self.model, x0, t, args=(params,))
@@ -425,10 +425,10 @@ class ODELayer():
         # Order of ranges will be all species followed by all params.
         ranges = []
         for idx, species in enumerate(self.species):
-            if species.name in self.x0_search_ranges:
-                ranges.append(self.x0_search_ranges[species.name])
-            else:
-                ranges.append([self.x0[idx], self.x0[idx]])
+            ranges.append([self.x0[idx], self.x0[idx]])
+
+        for species_idx in self.x0_search_ranges:
+            ranges[species_idx] = self.x0_search_ranges[species_idx]
 
         for param in self.params:
             if param.name in self.param_search_ranges:
