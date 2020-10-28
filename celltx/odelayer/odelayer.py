@@ -29,7 +29,8 @@ class ODELayer():
         self.unique_args = None
         self.ordered_rhss = None
         self.x0 = None
-        self.search_ranges = {}
+        self.param_search_ranges = {}
+        self.x0_search_ranges = {}
 
     def ravel_expression(self, expr):
         """
@@ -276,10 +277,171 @@ class ODELayer():
                 return param.expr
         warn('celltx ODELayer could not find param with name %s' % name)
 
-    def set_search_range(self, param_name, rnge):
-        self.search_ranges[param_name] = rnge
+    def set_param_search_range(self, param_name, rnge):
+        self.param_search_ranges[param_name] = rnge
 
-    def execute_paramspace_search(self, t, n_samples, parallel, method='LHS'):
+    def set_x0_search_range(self, x0_idx, rnge):
+        self.x0_search_ranges[x0_idx] = rnge
+
+    def execute_argspace_search(self, t, n_samples, parallel, method='LHS', quash_species=None):
+        """
+        Explore the space of parameter values and initial conditions specified via `self.set_param_search_range` and
+        `self.set_x0_search_range`. First, generate `n_samples` sets of input values using `method`, and then simulate
+        (possibly in n-`parallel`), the model timecourse for each sample.
+
+        Parameters
+        ----------
+        t : np.ndarray
+            The timeframe over which to integrate for each set
+        n_samples : int
+            How many samples to generate
+        parallel : int
+            Number of processing cores to use
+        method : str
+            Sampling method
+        quash_species : None or int
+            Index of a species to quash during the simulation (same functionality as `self.integrate_quash_species`).
+
+        Returns
+        -------
+        pandas.dataframe with columns for parameter values, x0 values, and timecourses.
+        """
+        print('celltx ODELayer: Generating %i samples from the %i dimensional argument space.' % (n_samples, len(self.params)+len(self.x0)))
+        argspace_samples = self.gen_argspace_samples(int(n_samples))
+
+        print('celltx ODELayer: Running parallel simulations on %i processors.' % parallel)
+        tic = time.time()
+
+        chunked_argspace_samples = self.chunks(argspace_samples, parallel)
+
+        manager = mp.Manager()
+        reservoir = manager.list()
+
+        jobs = []
+
+        for i, chk in enumerate(chunked_argspace_samples):
+            proc = mp.Process(target=self.process_argspace_chunk, args=(chk, reservoir, t, i, quash_species))
+            jobs.append(proc)
+            proc.start()
+
+        for process in jobs:
+            process.join()
+            process.terminate()
+
+        print('celltx ODELayer: Finished all %i simulations in %s.' % (int(n_samples), format_timedelta(time.time() - tic)))
+        a = list(reservoir)
+
+        for l in a:
+
+            # Assort the arg vals from the simulation into a dictionary keyed by their names.
+            # As per gen_argspace_samples, order is all species followed by all params.
+
+            arg_vals = l[0]
+            d = {}
+            keys = []
+            for species in self.species:
+                keys.append(species.name)
+            for param in self.params:
+                keys.append(param.name)
+
+            for i, pv in enumerate(arg_vals):
+                d[keys[i]] = pv
+            l[0] = d
+
+        return a
+
+    def process_argspace_chunk(self, chk, out, t, i, quash_species):
+        """
+        Process a chunk of argspace samples. This function is used for parallelizations.
+
+        Parameters
+        ----------
+        chk : list
+            list of lists, where each list has a value for each species and each parameter (in order of self.x)
+        out : multiprocess.reservoir
+            reservoir to send the outputs
+        t : np.ndarray
+            timeframe to integrate
+        i : int
+            Index of the processor (for reporting realtime progress)
+        quash_species : None or int
+            index of a species to quash during the integration
+        """
+
+        pbar = tqdm(chk, position=i, file=sys.stdout)
+        pbar.set_description('Processor %i Progress' % (i+1))
+
+        for arg_set in pbar:
+            output = []
+            try:
+                # Divide the arg_set into x0 and params. Order is from self.species and self.params.
+                x0 = arg_set[0:len(self.species)]
+                params = arg_set[len(self.species):]
+                if quash_species is not None:
+                    from copy import deepcopy
+
+                    Xi = odeint(self.model, x0, t, args=(params,))
+                    has_risen = False
+
+                    t_crit = -1
+
+                    for i, val in enumerate(Xi[:, quash_species]):
+                        if not has_risen:
+                            if val >= 1:
+                                has_risen = True
+                        else:
+                            if val < 1:
+                                t_crit = i
+                                break
+                    if t_crit == -1:
+                        output = [arg_set, Xi]
+                    else:
+                        x0_archive = deepcopy(x0)
+                        for i in range(Xi.shape[1]):
+                            timecourse = Xi[:,i]
+                            target_val = timecourse[t_crit]
+                            x0[i] = target_val
+                            if i == quash_species:
+                                x0[i] = 0
+
+                        XX = odeint(self.model, x0, t[t_crit:], args=(params,))
+
+                        Xi[t_crit:] = XX
+
+                        output = [arg_set, Xi]
+                else:
+                    result = odeint(self.model, x0, t, args=(params,))
+                    output = [arg_set, result]
+            except Exception as e:
+                print('ODELayer encountered exception while integrating: %s' % e)
+                output = [arg_set, e]
+            out.append(output)
+
+    def gen_argspace_samples(self, n_samples):
+        """
+        Use Latin Hypercube Sampling to generate samples of the parameter space (looking at self.param_search_ranges
+        and self.x0_search_ranges)
+        """
+        # Order of ranges will be all species followed by all params.
+        ranges = []
+        for idx, species in enumerate(self.species):
+            if species.name in self.x0_search_ranges:
+                ranges.append(self.x0_search_ranges[species.name])
+            else:
+                ranges.append([self.x0[idx], self.x0[idx]])
+
+        for param in self.params:
+            if param.name in self.param_search_ranges:
+                ranges.append(self.param_search_ranges[param.name])
+            else:
+                ranges.append([param.expr, param.expr])
+
+        ranges = np.array(ranges)
+        s = LHS(xlimits=ranges)
+        arg_sets = s(n_samples)
+        return arg_sets
+
+    def execute_paramspace_search(self, t, n_samples, parallel, method='LHS', quash_species=None):
         """
         Sample parameter values from parameter-specific ranges specified in self.search_ranges (dict) and simulate.
         Parameters that don't have an entry in self.search_ranges are not to be sampled.
@@ -308,7 +470,7 @@ class ODELayer():
         jobs = []
 
         for i, chk in enumerate(chunked_paramsets):
-            proc = mp.Process(target=self.process_paramset_chunk, args=(chk, reservoir, t, i))
+            proc = mp.Process(target=self.process_paramset_chunk, args=(chk, reservoir, t, i, quash_species))
             jobs.append(proc)
             proc.start()
 
@@ -330,12 +492,13 @@ class ODELayer():
 
         return a
 
-    def process_paramset_chunk(self, chk, out, t, i):
+    def process_paramset_chunk(self, chk, out, t, i, quash_species):
         pbar = tqdm(chk, position=i,file=sys.stdout)
         pbar.set_description('Processor %i Progress' % (i+1))
         for parameter_set in pbar:
             output = []
             try:
+
                 result = odeint(self.model, self.x0, t, args=(parameter_set,))
                 output = [parameter_set, result]
             except Exception as e:
