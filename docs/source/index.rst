@@ -1,11 +1,57 @@
-Celltx Documentation
-====================
+celltx package
+==============
 
-.. automodule:: celltx
-
-.. autoclass:: celltx.model.Model
+Subpackages
+-----------
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 4
 
+   celltx.biolayer
+   celltx.graphlayer
+   celltx.odelayer
+   celltx.syslayer
+
+Submodules
+----------
+
+celltx.functions module
+-----------------------
+
+.. automodule:: celltx.functions
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+celltx.model module
+-------------------
+
+.. automodule:: celltx.model
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+celltx.modeller module
+----------------------
+
+.. automodule:: celltx.modeller
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+celltx.util module
+------------------
+
+.. automodule:: celltx.util
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: celltx
+   :members:
+   :undoc-members:
+   :show-inheritance:
