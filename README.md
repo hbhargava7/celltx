@@ -86,7 +86,7 @@ To regenerate the documentation from zero:
 
 ```
 cd docs
-rm -rf source/*
+rm -rf source/*.rst
 sphinx-apidoc -o source/ ../celltx/
 cp source/celltx.rst source/index.rst
 make html 
