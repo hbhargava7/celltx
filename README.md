@@ -8,6 +8,38 @@
 ## Abstract
 celltx is a framework for building, visualizing, and simulating multiscale models of live cell therapies. celltx consists of a series of abstraction layers, which bridge model specifications which are biologically intuitive with model representations that are mathematically rigorous and numerically evaluable. At present, celltx converts a set of biological specifications into a directed graph, and further computes a system of differential equations representing the state of the biological system over time from the graph.
 
+## Installation
+
+**Installing the Package**
+
+After cloning this repository, issue the following command from the root directory.
+
+```
+python setup.py install
+```
+
+Or better yet, using `pip`:
+```
+pip install .
+```
+
+**Building Documentation**
+
+The documentation is managed with Sphinx. To build the documentation, issue the following from the 
+root directory.
+
+```
+cd docs
+make html
+```
+
+To regenerate the docs automatically from from the docstrings, use `sphinx-apidoc`:
+
+```
+cd docs
+sphinx-apidoc -o source/ ../celltx/
+```
+
 ## Abstraction Layer Architecture
 
 **Biology Layer - tx_cells, cell, cytokines**
@@ -47,38 +79,6 @@ The ODE layer describes the behavior of a biological system over time in the for
 
 - The derivative of the magnitude of an entity is given by a linear combination of the edge functions pointing to that entity node.
 - There will be as many equations as there are nodes in the system.
-
-## Installation
-
-**Installing the Package**
-
-After cloning this repository, issue the following command from the root directory.
-
-```
-python setup.py install
-```
-
-Or better yet, using `pip`:
-```
-pip install .
-```
-
-**Building Documentation**
-
-The documentation is managed with Sphinx. To build the documentation, issue the following from the 
-root directory.
-
-```
-cd docs
-make html
-```
-
-To regenerate the docs automatically from from the docstrings, use `sphinx-apidoc`:
-
-```
-cd docs
-sphinx-apidoc -o source/ ../celltx/
-```
 
 **Other Useful Tips**
 
