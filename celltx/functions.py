@@ -72,6 +72,11 @@ def ravel_expression(expr):
             args = args + ravel_expression(arg)
     return args
 
+def insured_hill(x, kmin, kmax, x50, n):
+    if x == 0:
+        return kmin
+    else:
+        return hill(x, kmin, kmax, x50, n)
 
 def hill(x, kmin, kmax, x50, n):
     return kmin + (kmax - kmin) / (1 + ((x50) / (x)) ** n)
