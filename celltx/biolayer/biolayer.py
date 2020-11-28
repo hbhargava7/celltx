@@ -87,7 +87,16 @@ class BioLayer:
         """Add a compartment linkage to the model."""
         self.compartment_linkages.append((a, b))
 
-    def add_tx_cells(self, name, states, state_linkages=[], daughter_state=[], cytokine_linkages=[], killing_linkages=[]):
+    def add_tx_cells(self, name, states, state_linkages=None, daughter_state=None, cytokine_linkages=None, killing_linkages=None):
+        if state_linkages is None:
+            state_linkages = []
+        if daughter_state is None:
+            daughter_state = []
+        if cytokine_linkages is None:
+            cytokine_linkages = []
+        if killing_linkages is None:
+            killing_linkages = []
+
         """Add a type of therapeutic cells to the model."""
         c = {}
         c['name'] = name
@@ -205,13 +214,13 @@ class BioLayer:
         return Selector(selector_name, kind, cs, latex=selector_latex)
 
     # SPECIES Getters - get something from one of self.x based on name and type
-    def get_species(self, type, name):
-        map = {}
-        map['tx_cell'] = self.tx_cells
-        map['cell'] = self.cells
-        map['cytokine'] = self.cytokines
+    def get_species(self, kind, name):
+        mapper = {}
+        mapper['tx_cell'] = self.tx_cells
+        mapper['cell'] = self.cells
+        mapper['cytokine'] = self.cytokines
 
-        source = map[type]
+        source = mapper[kind]
 
         for x in source:
             if x['name'] == name:
@@ -248,8 +257,8 @@ class BioLayer:
         killLink = {}
         killLink['target'] = target_cells
         killLink['killer_states'] = comp_states
-
         target['killing_linkages'].append(killLink)
+        # target['killing_linkages'] = (*target['killing_linkages'], killLink)
 
     def set_tx_cell_daughter_state(self, tx_cell_name, daughter_state):
         target = self.get_species('tx_cell', tx_cell_name)
