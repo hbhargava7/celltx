@@ -31,6 +31,7 @@ class ODELayer():
         self.x0 = None
         self.param_search_ranges = {}
         self.x0_search_ranges = {}
+        self.pinned_params = []
 
     def ravel_expression(self, expr):
         """
@@ -187,6 +188,24 @@ class ODELayer():
             if species.name == species_name:
                 return i
         warn('Celltx ODELayer index_of_species was unable to find species named %s in the model.' % species_name)
+
+    def index_of_parameter(self, parameter_name):
+        """
+        Get the index within `self.parameters` of the parameter named `parameter_name`
+
+        Parameters
+        ----------
+        parameter_name
+
+        Returns
+        -------
+        int
+        """
+
+        for i,parameter in enumerate(self.params):
+            if parameter.name == parameter_name:
+                return i
+        warn('Celltx ODELayer index_of_parameter was unable to find parameter named %s in the model.' % parameter_name)
 
     def integrate_quash_species(self, t, species_idx, threshold=1, target=0):
         """
@@ -417,6 +436,21 @@ class ODELayer():
                 output = [arg_set, e]
             out.append(output)
 
+    def pin_params_for_search(self, param_names):
+        """
+        Create pairs of parameters which will have the same value when samples are created, e.g. by `self.gen_argspace_samples`.
+
+        Parameters
+        ----------
+        params : tuple of parameters to pin (should correspond to elements of `self.params`.
+
+        Returns
+        -------
+        None
+        """
+
+        self.pinned_params.append(param_names)
+
     def gen_argspace_samples(self, n_samples):
         """
         Use Latin Hypercube Sampling to generate samples of the parameter space (looking at self.param_search_ranges
@@ -439,6 +473,23 @@ class ODELayer():
         ranges = np.array(ranges)
         s = LHS(xlimits=ranges)
         arg_sets = s(n_samples)
+
+        # now handle the `self.pinned_params`: For each pin tuple, get the indices of the params and make the parameter
+        # sample values the same (we'll take the generated samples from the first one.
+
+        # the structure of arg_sets is n lists of a args each.
+
+        for pin_set in self.pinned_params:
+            pin_indices = [self.index_of_parameter(p)+len(self.species) for p in pin_set]
+
+            for i,sample in enumerate(arg_sets):
+                for j,pin_index in enumerate(pin_indices):
+                    # skip over the first instance
+                    if j == 0:
+                        continue
+                    # for subsequent instances, copy the 0th instance value to the jth value.
+                    arg_sets[i][pin_index] = sample[pin_indices[0]]
+
         return arg_sets
 
     def execute_paramspace_search(self, t, n_samples, parallel, method='LHS', quash_species=None):
