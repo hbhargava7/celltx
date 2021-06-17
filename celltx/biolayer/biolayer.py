@@ -506,7 +506,7 @@ class BioLayer:
                             if cytokine_link['action'] == 'secrete':
                                 func = a*Constant('k_secrete', 10)
                             elif cytokine_link['action'] == 'sink':
-                                func = -a*b*constant('k_sink', 10)
+                                func = -a*b*Constant('k_sink', 10)
                             sys.add_relationship('cytokine_modulation', a, b, func)
 
         # Add the cell linkages
