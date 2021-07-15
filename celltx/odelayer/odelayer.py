@@ -323,8 +323,10 @@ class ODELayer():
 
         Returns
         -------
-        pandas.dataframe with columns for parameter values, x0 values, and timecourses.
+        Returns a list of length n_simulations where each element is a 2-lists where 0 is a dictionary of
+        x0 and parameter values and 1 is a numpy array of result timecourses X.
         """
+
         print('celltx ODELayer: Generating %i samples from the %i dimensional argument space.' % (n_samples, len(self.params)+len(self.x0)))
         argspace_samples = self.gen_argspace_samples(int(n_samples))
 

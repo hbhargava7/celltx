@@ -5,6 +5,28 @@
 import sympy as sy
 
 
+class Symbol(sy.Symbol):
+
+    def __new__(cls, name, latex=None, domain=None, **assumptions):
+        var = super().__new__(cls, name, **assumptions)
+        var.latex = latex
+        var.domain = domain
+        return var
+
+    def __getnewargs__(self):
+        return self.name, self.selector_type, self.selector, self.latex, self.domain
+
+    def _latex(self, printer):
+        if self.latex is not None:
+            return self.latex
+        return printer._print_Symbol(self)
+
+    def __getstate__(self):
+        state = super().__getstate__()
+        state.update(latex=self.latex, domain=self.domain)
+        return state
+
+
 class Selector(sy.Symbol):
 
     def __new__(cls, name, selector_type, selector, latex=None, domain=None, **assumptions):
