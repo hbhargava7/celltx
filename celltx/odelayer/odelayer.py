@@ -447,8 +447,8 @@ class ODELayer():
             timeframe to integrate
         i : int
             Index of the processor (for reporting realtime progress)
-        quash_species : None or int
-            index of a species to quash during the integration
+        quash_species : list of lists
+            groups of species to quash
         """
 
         pbar = tqdm(chk, position=i, file=sys.stdout)
