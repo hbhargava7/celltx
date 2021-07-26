@@ -202,12 +202,12 @@ class ODELayer():
         int
         """
 
-        for i,parameter in enumerate(self.params):
+        for i, parameter in enumerate(self.params):
             if parameter.name == parameter_name:
                 return i
         warn('Celltx ODELayer index_of_parameter was unable to find parameter named %s in the model.' % parameter_name)
 
-    def integrate_quash_species(self, t, species_idxs, start_from=None):
+    def integrate_quash_species(self, t, species_idxs, start_from=None, override_params=None, override_x0=None):
         """
         Goal is to account for the fact that species in a model should not be able to resurge from a value less than 1.
         In addition, since species at the `odelayer` abstraction level often actually represent individual states
@@ -237,7 +237,7 @@ class ODELayer():
         np.ndarray with a row for each species in the model and a column for each timepoint (in `t`).
 
         """
-
+        print('iqs called with species idxs: %s'%species_idxs)
         # Make it work with the old input format for single species quash
         if not isinstance(species_idxs, list):
             species_idxs = [species_idxs]
@@ -251,13 +251,16 @@ class ODELayer():
         if start_from is not None:
             # print('celltx.multiquash starting from timepoint %i.' % (start_from.shape[0]))
             # print(start_from[-1,:])
-            calculated_block = self.integrate(t[start_from.shape[0]:], override_x0=start_from[-1,:])
+            calculated_block = self.integrate(t[start_from.shape[0]:], override_x0=start_from[-1, :],
+                                              override_params=override_params)
             X_initial = np.concatenate((start_from, calculated_block), axis=0)
             # print('celltx.multiquash calculated a composite integration result with shape: %i'%X_initial.shape[0])
         else:
-            X_initial = self.integrate(t) # initial integration
+            X_initial = self.integrate(t, override_params=override_params,
+                                       override_x0=override_x0)  # initial integration
 
-        d = [False for _ in species_idxs] # list to track the t_crit value for each species group (where it fell below 1)
+        d = [False for _ in
+             species_idxs]  # list to track the t_crit value for each species group (where it fell below 1)
 
         # If there are no species left to quash, return
         if len(species_idxs) == 0:
@@ -267,18 +270,18 @@ class ODELayer():
         # If no such timepoint exists, store False in d.
         # print('searching with species_idxs: %s'%species_idxs)
         for i, species_group in enumerate(species_idxs):
-            for timepoint, _X in enumerate(X_initial): # for each slice of the starting integration
+            for timepoint, _X in enumerate(X_initial):  # for each slice of the starting integration
                 t_crit = timepoint
-                for species in species_group: # if any of the subspecies are >=1, this ain't it.
+                for species in species_group:  # if any of the subspecies are >=1, this ain't it.
                     if _X[species] >= 1:
                         # print('rejecting timepoint %i for species %i bc value %.2f'%(timepoint, species, _X[species]))
                         t_crit = False
 
-                if not isinstance(t_crit, type(False)): # If t_crit is a number, we found our instance.
+                if not isinstance(t_crit, type(False)):  # If t_crit is a number, we found our instance.
                     # print('found t_crit %.2f for species group idx %i. '%(t_crit, i))
                     break
 
-            d[i] = t_crit # Store the value in d
+            d[i] = t_crit  # Store the value in d
             # print('found d matrix %s' % d)
 
         # If all values in d are False, return.
@@ -292,31 +295,35 @@ class ODELayer():
                     return X_initial
 
         # If all values are not False, find the first t_crit and corresponding species.
-        dd = [val if not isinstance(val, type(False)) else max(d) + 1 for val in d]  # convert False values to large values
-        idx_to_quash = dd.index(min(dd)) # index of the species group in species_idxs
-        timepoint_to_quash = dd[idx_to_quash] # timepoint where quashing starts
-        species_idxs_to_quash = species_idxs[idx_to_quash] # tuple of subspecies to actually quash.
+        dd = [val if not isinstance(val, type(False)) else max(d) + 1 for val in
+              d]  # convert False values to large values
+        idx_to_quash = dd.index(min(dd))  # index of the species group in species_idxs
+        timepoint_to_quash = dd[idx_to_quash]  # timepoint where quashing starts
+        species_idxs_to_quash = species_idxs[idx_to_quash]  # tuple of subspecies to actually quash.
 
         # Now, generate the start_from matrix for the recursion.
         _done = X_initial[0:timepoint_to_quash, :]
 
         # Set the value of each species in the group we're quashing to 0
         for s in species_idxs_to_quash:
-            _done[timepoint_to_quash-1, s] = 0
+            _done[timepoint_to_quash - 1, s] = 0
 
         # Generate a species_idxs list that is missing the one we just quashed so that we don't get an infinite loop.
         species_idxs.pop(idx_to_quash)
 
         # Recurse
         # print('celltx.odelayer.multiquash recursing')
-        return self.integrate_quash_species(t, species_idxs, start_from=_done)
+        return self.integrate_quash_species(t, species_idxs, start_from=_done, override_params=override_params)
 
-    def integrate(self, t, override_x0=None):
+    def integrate(self, t, override_x0=None, override_params=None):
         """
         Integrate the model at timepoints in t using literal parameter values.
         """
         # Assemble the parameter values into a list.
         params = [float(param.expr) for param in self.params]
+
+        if override_params is not None:
+            params = override_params
 
         _x0 = self.x0
 
@@ -381,7 +388,8 @@ class ODELayer():
         x0 and parameter values and 1 is a numpy array of result timecourses X.
         """
 
-        print('celltx ODELayer: Generating %i samples from the %i dimensional argument space.' % (n_samples, len(self.params)+len(self.x0)))
+        print('celltx ODELayer: Generating %i samples from the %i dimensional argument space.' % (
+        n_samples, len(self.params) + len(self.x0)))
         argspace_samples = self.gen_argspace_samples(int(n_samples))
 
         print('celltx ODELayer: Running parallel simulations on %i processors.' % parallel)
@@ -403,7 +411,8 @@ class ODELayer():
             process.join()
             process.terminate()
 
-        print('celltx ODELayer: Finished all %i simulations in %s.' % (int(n_samples), format_timedelta(time.time() - tic)))
+        print('celltx ODELayer: Finished all %i simulations in %s.' % (
+        int(n_samples), format_timedelta(time.time() - tic)))
         a = list(reservoir)
 
         for l in a:
@@ -444,7 +453,7 @@ class ODELayer():
         """
 
         pbar = tqdm(chk, position=i, file=sys.stdout)
-        pbar.set_description('Processor %i Progress' % (i+1))
+        pbar.set_description('Processor %i Progress' % (i + 1))
 
         for arg_set in pbar:
             output = []
@@ -452,41 +461,11 @@ class ODELayer():
                 # Divide the arg_set into x0 and params. Order is from self.species and self.params.
                 x0 = arg_set[0:len(self.species)]
                 params = arg_set[len(self.species):]
-                if quash_species is not None:
-                    from copy import deepcopy
 
-                    Xi = odeint(self.model, x0, t, args=(params,))
-                    has_risen = False
+                X = self.integrate_quash_species(t=t, species_idxs=quash_species, override_params=params,
+                                                 override_x0=x0)
+                output = [arg_set, X]
 
-                    t_crit = -1
-
-                    for i, val in enumerate(Xi[:, quash_species]):
-                        if not has_risen:
-                            if val >= 1:
-                                has_risen = True
-                        else:
-                            if val < 1:
-                                t_crit = i
-                                break
-                    if t_crit == -1:
-                        output = [arg_set, Xi]
-                    else:
-                        x0_archive = deepcopy(x0)
-                        for i in range(Xi.shape[1]):
-                            timecourse = Xi[:,i]
-                            target_val = timecourse[t_crit]
-                            x0[i] = target_val
-                            if i == quash_species:
-                                x0[i] = 0
-
-                        XX = odeint(self.model, x0, t[t_crit:], args=(params,))
-
-                        Xi[t_crit:] = XX
-                        arg_set[0:len(self.species)] = x0_archive
-                        output = [arg_set, Xi]
-                else:
-                    result = odeint(self.model, x0, t, args=(params,))
-                    output = [arg_set, result]
             except Exception as e:
                 print('ODELayer encountered exception while integrating: %s' % e)
                 output = [arg_set, e]
@@ -536,10 +515,10 @@ class ODELayer():
         # the structure of arg_sets is n lists of a args each.
 
         for pin_set in self.pinned_params:
-            pin_indices = [self.index_of_parameter(p)+len(self.species) for p in pin_set]
+            pin_indices = [self.index_of_parameter(p) + len(self.species) for p in pin_set]
 
-            for i,sample in enumerate(arg_sets):
-                for j,pin_index in enumerate(pin_indices):
+            for i, sample in enumerate(arg_sets):
+                for j, pin_index in enumerate(pin_indices):
                     # skip over the first instance
                     if j == 0:
                         continue
@@ -563,7 +542,8 @@ class ODELayer():
         list of 2-lists, where list[0] is parameter values (in same order as self.params), and list[1] is a timecourse
         from self.integrate()
         """
-        print('celltx ODELayer: Generating %i samples from the %i dimensional parameter space.' % (n_samples, len(self.params)))
+        print('celltx ODELayer: Generating %i samples from the %i dimensional parameter space.' % (
+        n_samples, len(self.params)))
         parameter_sets = self.gen_paramspace_samples(int(n_samples))
 
         print('celltx ODELayer: Running parallel simulations on %i processors.' % parallel)
@@ -585,7 +565,8 @@ class ODELayer():
             process.join()
             process.terminate()
 
-        print("celltx ODELayer: Finished all %i simulations in: %s." % (int(n_samples), format_timedelta(time.time() - tic)))
+        print("celltx ODELayer: Finished all %i simulations in: %s." % (
+        int(n_samples), format_timedelta(time.time() - tic)))
         a = list(reservoir)
 
         # Comprehend l[0] for l in a into a dictionary keyed by self.params names.
@@ -600,8 +581,8 @@ class ODELayer():
         return a
 
     def process_paramset_chunk(self, chk, out, t, i, quash_species):
-        pbar = tqdm(chk, position=i,file=sys.stdout)
-        pbar.set_description('Processor %i Progress' % (i+1))
+        pbar = tqdm(chk, position=i, file=sys.stdout)
+        pbar.set_description('Processor %i Progress' % (i + 1))
         for parameter_set in pbar:
             output = []
             try:
@@ -612,7 +593,6 @@ class ODELayer():
                 print('ODELayer encountered exception while integrating: %s' % e)
                 output = [parameter_set, e]
             out.append(output)
-
 
     def chunks(self, lst, nChunks):
         """Divide a list into n lists where all chunks have even size, except for the last one, which is smaller."""
@@ -745,7 +725,7 @@ class ODELayer():
             output.append((arg, []))
 
         for tp in tqdm(range(len(X))):  # for each timepoint
-            for j,arg in enumerate(expression.args):
+            for j, arg in enumerate(expression.args):
                 # substitute each term in the arg with the appropriate value.
                 for term in self.ravel_expression(arg):
                     if isinstance(term, Constant):
@@ -765,4 +745,3 @@ class ODELayer():
                 output[j][1].append(arg)
 
         return output
-
