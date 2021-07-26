@@ -237,7 +237,6 @@ class ODELayer():
         np.ndarray with a row for each species in the model and a column for each timepoint (in `t`).
 
         """
-        print('iqs called with species idxs: %s'%species_idxs)
         # Make it work with the old input format for single species quash
         if not isinstance(species_idxs, list):
             species_idxs = [species_idxs]
