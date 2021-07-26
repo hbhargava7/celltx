@@ -242,10 +242,10 @@ class ODELayer():
             species_idxs = [species_idxs]
 
         # Warn about not fully tested functionality
-        max_len = max([len(s) for s in species_idxs])
-        if max_len > 1:
-            warn('celltx.odelayer.multiquash: Warning - the quash_species functionality has only been tested for '
-                 'individual species; not multiple in the same group.')
+        # max_len = max([len(s) for s in species_idxs])
+        # if max_len > 1:
+        #     warn('celltx.odelayer.multiquash: Warning - the quash_species functionality has only been tested for '
+        #          'individual species; not multiple in the same group.')
 
         if start_from is not None:
             # print('celltx.multiquash starting from timepoint %i.' % (start_from.shape[0]))
