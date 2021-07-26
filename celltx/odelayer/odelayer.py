@@ -249,11 +249,11 @@ class ODELayer():
                  'individual species; not multiple in the same group.')
 
         if start_from is not None:
-            print('celltx.multiquash starting from timepoint %i.' % (start_from.shape[0]))
-            print(start_from[-1,:])
+            # print('celltx.multiquash starting from timepoint %i.' % (start_from.shape[0]))
+            # print(start_from[-1,:])
             calculated_block = self.integrate(t[start_from.shape[0]:], override_x0=start_from[-1,:])
             X_initial = np.concatenate((start_from, calculated_block), axis=0)
-            print('celltx.multiquash calculated a composite integration result with shape: %i'%X_initial.shape[0])
+            # print('celltx.multiquash calculated a composite integration result with shape: %i'%X_initial.shape[0])
         else:
             X_initial = self.integrate(t) # initial integration
 
@@ -265,7 +265,7 @@ class ODELayer():
 
         # For each species_group, find the first timepoint t_crit where all subspecies were < 1 and store in d.
         # If no such timepoint exists, store False in d.
-        print('searching with species_idxs: %s'%species_idxs)
+        # print('searching with species_idxs: %s'%species_idxs)
         for i, species_group in enumerate(species_idxs):
             for timepoint, _X in enumerate(X_initial): # for each slice of the starting integration
                 t_crit = timepoint
@@ -275,11 +275,11 @@ class ODELayer():
                         t_crit = False
 
                 if not isinstance(t_crit, type(False)): # If t_crit is a number, we found our instance.
-                    print('found t_crit %.2f for species group idx %i. '%(t_crit, i))
+                    # print('found t_crit %.2f for species group idx %i. '%(t_crit, i))
                     break
 
             d[i] = t_crit # Store the value in d
-            print('found d matrix %s' % d)
+            # print('found d matrix %s' % d)
 
         # If all values in d are False, return.
         if sum(d) == 0:
@@ -288,7 +288,7 @@ class ODELayer():
                 if not isinstance(val, type(False)):
                     all_booleans = False
                 if all_booleans:
-                    print('celltx.odelayer.multiquash found nothing to quash!')
+                    # print('celltx.odelayer.multiquash found nothing to quash!')
                     return X_initial
 
         # If all values are not False, find the first t_crit and corresponding species.
@@ -308,13 +308,12 @@ class ODELayer():
         species_idxs.pop(idx_to_quash)
 
         # Recurse
-        print('celltx.odelayer.multiquash recursing')
+        # print('celltx.odelayer.multiquash recursing')
         return self.integrate_quash_species(t, species_idxs, start_from=_done)
 
     def integrate(self, t, override_x0=None):
         """
         Integrate the model at timepoints in t using literal parameter values.
-
         """
         # Assemble the parameter values into a list.
         params = [float(param.expr) for param in self.params]
