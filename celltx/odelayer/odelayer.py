@@ -207,61 +207,111 @@ class ODELayer():
                 return i
         warn('Celltx ODELayer index_of_parameter was unable to find parameter named %s in the model.' % parameter_name)
 
-    def integrate_quash_species(self, t, species_idx, threshold=1, target=0):
+    def integrate_quash_species(self, t, species_idxs, start_from=None):
         """
-        Goal is to account for the fact that a species in the model should not be able to resurge from a value less than 1.
+        Goal is to account for the fact that species in a model should not be able to resurge from a value less than 1.
+        In addition, since species at the `odelayer` abstraction level often actually represent individual states
+        of true biological species (e.g. activated and unactivated T cells), it may be important to consider multiple
+        species when attempting to quash a biological species.
 
-        Algorithm:
-            1. Integrate `self.model` over timespace `t` as normal.
-            2. Find (if it happens) the timepoint `t_crit` at which species at `species_idx` falls below `threshold`.
-            (after first rising above `threshold` at least once).
-            3. Conduct a new simulation from `t_crit` to `t[-1]`, with species at `species_idx` starting at `target` and all
-            other species in the model starting from their value in the initial simulation at `t_crit`.
+        Recursive algorithm:
+            1. Integrate `self.model` over timespace `t`.
+            2. Find (if it exists) the first timeopint `t_crit` at which all species in a group S (from species_idxs)
+                have fallen below 1.
+            3. Recurse, but start the simulation at `t_crit` and feed a modified x0 where species in S are set to 0.
+            4. Return the result if there is no t_crit.
+
+        Parameters
+        ----------
+        t : np.linspace
+            The timeframe to integrate.
+        species_idxs : list[tuple]
+            List of tuples, where each tuple defines a group of species (addressed by indices in self.species) that
+            should be quashed together.
+        start_from : np.ndarray or None
+            Numpy array with a row for each species and a column for each timepoint. If it is provided, the simulation
+            will start at timepoint t[start_from.shape[0]] and the first start_from.shape[0] cols will be pasted in.
+
+        Returns
+        -------
+        np.ndarray with a row for each species in the model and a column for each timepoint (in `t`).
+
         """
-        from copy import deepcopy
 
-        # Get the initial integral
-        Xi = self.integrate(t)
-        # Iterate through the timecourse of the species of interest.
-        has_risen = False # keep track of whether the species has been > threshold yet (don't trigger if x0 was 0)
-        t_crit = -1
-        for i, val in enumerate(Xi[:, species_idx]):
-            if not has_risen:
-                if val >= threshold:
-                    # Once the species rises above threshold, we are now watching for it to fall back down.
-                    has_risen = True
-            else:
-                # Check if the species has fallen back down
-                if val < threshold:
-                    t_crit = i
-                    # print('found critical value %.2f at timepoint %i' % (val, i))
+        # Make it work with the old input format for single species quash
+        if not isinstance(species_idxs, list):
+            species_idxs = [species_idxs]
+
+        # Warn about not fully tested functionality
+        max_len = max([len(s) for s in species_idxs])
+        if max_len > 1:
+            warn('celltx.odelayer.multiquash: Warning - the quash_species functionality has only been tested for '
+                 'individual species; not multiple in the same group.')
+
+        if start_from is not None:
+            print('celltx.multiquash starting from timepoint %i.' % (start_from.shape[0]))
+            print(start_from[-1,:])
+            calculated_block = self.integrate(t[start_from.shape[0]:], override_x0=start_from[-1,:])
+            X_initial = np.concatenate((start_from, calculated_block), axis=0)
+            print('celltx.multiquash calculated a composite integration result with shape: %i'%X_initial.shape[0])
+        else:
+            X_initial = self.integrate(t) # initial integration
+
+        d = [False for _ in species_idxs] # list to track the t_crit value for each species group (where it fell below 1)
+
+        # If there are no species left to quash, return
+        if len(species_idxs) == 0:
+            return X_initial
+
+        # For each species_group, find the first timepoint t_crit where all subspecies were < 1 and store in d.
+        # If no such timepoint exists, store False in d.
+        print('searching with species_idxs: %s'%species_idxs)
+        for i, species_group in enumerate(species_idxs):
+            for timepoint, _X in enumerate(X_initial): # for each slice of the starting integration
+                t_crit = timepoint
+                for species in species_group: # if any of the subspecies are >=1, this ain't it.
+                    if _X[species] >= 1:
+                        # print('rejecting timepoint %i for species %i bc value %.2f'%(timepoint, species, _X[species]))
+                        t_crit = False
+
+                if not isinstance(t_crit, type(False)): # If t_crit is a number, we found our instance.
+                    print('found t_crit %.2f for species group idx %i. '%(t_crit, i))
                     break
-        # if t_crit is still -1, the species never fell back down.
-        if t_crit == -1:
-            return Xi
 
-        # otherwise, setup a new simulation
-        # store current x0 values
-        x0_archive = deepcopy(self.x0)
+            d[i] = t_crit # Store the value in d
+            print('found d matrix %s' % d)
 
-        # now assign self.x0 values from t_crit
-        for i in range(Xi.shape[1]):
-            timecourse = Xi[:,i]
-            target_val = timecourse[t_crit]
-            self.x0[i] = target_val
+        # If all values in d are False, return.
+        if sum(d) == 0:
+            all_booleans = True
+            for val in d:
+                if not isinstance(val, type(False)):
+                    all_booleans = False
+                if all_booleans:
+                    print('celltx.odelayer.multiquash found nothing to quash!')
+                    return X_initial
 
-            if i == species_idx:
-                self.x0[i] = target
+        # If all values are not False, find the first t_crit and corresponding species.
+        dd = [val if not isinstance(val, type(False)) else max(d) + 1 for val in d]  # convert False values to large values
+        idx_to_quash = dd.index(min(dd)) # index of the species group in species_idxs
+        timepoint_to_quash = dd[idx_to_quash] # timepoint where quashing starts
+        species_idxs_to_quash = species_idxs[idx_to_quash] # tuple of subspecies to actually quash.
 
-        X = self.integrate(t[t_crit:])
+        # Now, generate the start_from matrix for the recursion.
+        _done = X_initial[0:timepoint_to_quash, :]
 
-        Xi[t_crit:] = X
+        # Set the value of each species in the group we're quashing to 0
+        for s in species_idxs_to_quash:
+            _done[timepoint_to_quash-1, s] = 0
 
-        self.x0 = x0_archive
+        # Generate a species_idxs list that is missing the one we just quashed so that we don't get an infinite loop.
+        species_idxs.pop(idx_to_quash)
 
-        return Xi
+        # Recurse
+        print('celltx.odelayer.multiquash recursing')
+        return self.integrate_quash_species(t, species_idxs, start_from=_done)
 
-    def integrate(self, t):
+    def integrate(self, t, override_x0=None):
         """
         Integrate the model at timepoints in t using literal parameter values.
 
@@ -269,7 +319,12 @@ class ODELayer():
         # Assemble the parameter values into a list.
         params = [float(param.expr) for param in self.params]
 
-        x = odeint(self.model, self.x0, t, args=(params,))
+        _x0 = self.x0
+
+        if override_x0 is not None:
+            _x0 = override_x0
+
+        x = odeint(self.model, _x0, t, args=(params,))
         return x
 
     def set_initial_value(self, idx, val):
