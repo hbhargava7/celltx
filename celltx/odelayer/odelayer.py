@@ -13,6 +13,7 @@ import math, time
 import sys
 import multiprocessing as mp
 from warnings import warn
+import copy
 
 from ..functions import Selector, Constant
 from ..util import format_timedelta
@@ -207,7 +208,7 @@ class ODELayer():
                 return i
         warn('Celltx ODELayer index_of_parameter was unable to find parameter named %s in the model.' % parameter_name)
 
-    def integrate_quash_species(self, t, species_idxs, start_from=None, override_params=None, override_x0=None):
+    def integrate_quash_species(self, t, species_idxs, start_from=None, override_params=None, override_x0=None, r=1):
         """
         Goal is to account for the fact that species in a model should not be able to resurge from a value less than 1.
         In addition, since species at the `odelayer` abstraction level often actually represent individual states
@@ -237,6 +238,7 @@ class ODELayer():
         np.ndarray with a row for each species in the model and a column for each timepoint (in `t`).
 
         """
+        # print('multiquash called on species_idxs: %s'%species_idxs)
         # Make it work with the old input format for single species quash
         if not isinstance(species_idxs, list):
             species_idxs = [species_idxs]
@@ -248,13 +250,12 @@ class ODELayer():
         #          'individual species; not multiple in the same group.')
 
         if start_from is not None:
-            # print('celltx.multiquash starting from timepoint %i.' % (start_from.shape[0]))
-            # print(start_from[-1,:])
+            # print('celltx.multiquash starting from timepoint %i with r index %i.' % (start_from.shape[0], r))
             calculated_block = self.integrate(t[start_from.shape[0]:], override_x0=start_from[-1, :],
                                               override_params=override_params)
             X_initial = np.concatenate((start_from, calculated_block), axis=0)
-            # print('celltx.multiquash calculated a composite integration result with shape: %i'%X_initial.shape[0])
         else:
+            # print('celltx.multiquash starting with a fresh integral; start_from was %s. rec = %i'%(start_from, r))
             X_initial = self.integrate(t, override_params=override_params,
                                        override_x0=override_x0)  # initial integration
 
@@ -263,6 +264,7 @@ class ODELayer():
 
         # If there are no species left to quash, return
         if len(species_idxs) == 0:
+            # print('celltx multiquash returning trivial integrand since species_idxs was empty')
             return X_initial
 
         # For each species_group, find the first timepoint t_crit where all subspecies were < 1 and store in d.
@@ -291,6 +293,7 @@ class ODELayer():
                     all_booleans = False
                 if all_booleans:
                     # print('celltx.odelayer.multiquash found nothing to quash!')
+                    # print('multiquash returning since all values in d are False %s'%d)
                     return X_initial
 
         # If all values are not False, find the first t_crit and corresponding species.
@@ -312,7 +315,8 @@ class ODELayer():
 
         # Recurse
         # print('celltx.odelayer.multiquash recursing')
-        return self.integrate_quash_species(t, species_idxs, start_from=_done, override_params=override_params)
+        # print('about to recurse (r=%i)'%r)
+        return self.integrate_quash_species(t, species_idxs, start_from=_done, override_params=override_params, r=r+1)
 
     def integrate(self, t, override_x0=None, override_params=None):
         """
@@ -450,6 +454,7 @@ class ODELayer():
         quash_species : list of lists
             groups of species to quash
         """
+        print('processing chunk with quashed species: %s' % quash_species)
 
         pbar = tqdm(chk, position=i, file=sys.stdout)
         pbar.set_description('Processor %i Progress' % (i + 1))
@@ -460,9 +465,9 @@ class ODELayer():
                 # Divide the arg_set into x0 and params. Order is from self.species and self.params.
                 x0 = arg_set[0:len(self.species)]
                 params = arg_set[len(self.species):]
+                print('calling iqs with quash_species=%s'%quash_species)
+                X = self.integrate_quash_species(t=t, species_idxs=copy.deepcopy(quash_species), override_params=params, override_x0=x0)
 
-                X = self.integrate_quash_species(t=t, species_idxs=quash_species, override_params=params,
-                                                 override_x0=x0)
                 output = [arg_set, X]
 
             except Exception as e:
