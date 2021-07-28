@@ -465,7 +465,7 @@ class ODELayer():
                 # Divide the arg_set into x0 and params. Order is from self.species and self.params.
                 x0 = arg_set[0:len(self.species)]
                 params = arg_set[len(self.species):]
-                print('calling iqs with quash_species=%s'%quash_species)
+                # print('calling iqs with quash_species=%s'%quash_species)
                 X = self.integrate_quash_species(t=t, species_idxs=copy.deepcopy(quash_species), override_params=params, override_x0=x0)
 
                 output = [arg_set, X]
