@@ -454,7 +454,7 @@ class ODELayer():
         quash_species : list of lists
             groups of species to quash
         """
-        print('processing chunk with quashed species: %s' % quash_species)
+        # print('processing chunk with quashed species: %s' % quash_species)
 
         pbar = tqdm(chk, position=i, file=sys.stdout)
         pbar.set_description('Processor %i Progress' % (i + 1))
