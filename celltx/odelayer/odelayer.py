@@ -65,7 +65,6 @@ class ODELayer():
         -------
         None
         """
-
         # Prune any term from an equation that is not either a constant or the LHS of another equation.
         pruned_eqs = []
         lhs = [eq.lhs.args[0] for eq in self.equations]
@@ -114,7 +113,7 @@ class ODELayer():
 
         for arg in unique_sels:
             for eq in self.equations:
-                if eq.lhs.args[0].selector is arg.selector:
+                if eq.lhs.args[0].selector == arg.selector:
                     ordered_rhss.append(eq.rhs)
                     ordered_equations.append(eq)
 
@@ -130,6 +129,8 @@ class ODELayer():
 
         # Also generate starting conditions self.x0 (zeros for each species)
         self.x0 = np.zeros(len(self.species))
+
+        print('generated ode model with %i equations'%len(self.equations))
 
     def model(self, X, t, args):
         """
@@ -633,7 +634,7 @@ class ODELayer():
                 display_func(eq)
         else:
             substitute_eqs = []
-            for eq in self.equations:
+            for eq in copy.deepcopy(self.equations):
                 X = eq.lhs.args[0]
                 X_symbol = sy.sympify('X_self')
                 rhs = eq.rhs.subs(X, X_symbol)

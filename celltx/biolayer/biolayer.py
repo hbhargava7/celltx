@@ -61,10 +61,12 @@ class BioLayer:
             * ``'daughter_state'`` (list[tuple[str]]) list of 2-tuples addressing the cellstate yielded by proliferation.
             * ``'cytokine_linkages'`` (list[:class:`CytokineLink`]) list describing linkages with cytokines.
             * ``'killing_linkages'`` (list[:class:`KillLink`]) list describing what the tx cell can kill.
+            * ``'growth_type'`` (str) type of term governing proliferation of the cells (e.g., linear, logistic).
     cells : list[dict]
         List describing the ordinary celltypes as ``dict`` objects with structure:
             * ``'name'`` : Unique name
             * ``'compartment'`` : Name of the compartment in which the cells reside.
+            * ``'growth_type'``: Type of term governing growth of the cells (e.g. linear, logistic).
     cytokines : list[str]
         List describing the cytokines in the model by unique names.
     interactions : list[:class:`SingleSelector`]
@@ -87,7 +89,8 @@ class BioLayer:
         """Add a compartment linkage to the model."""
         self.compartment_linkages.append((a, b))
 
-    def add_tx_cells(self, name, states, state_linkages=None, daughter_state=None, cytokine_linkages=None, killing_linkages=None):
+    def add_tx_cells(self, name, states, state_linkages=None, daughter_state=None, cytokine_linkages=None,
+                     killing_linkages=None, growth_type=None):
         if state_linkages is None:
             state_linkages = []
         if daughter_state is None:
@@ -105,10 +108,15 @@ class BioLayer:
         c['daughter_state'] = daughter_state
         c['cytokine_linkages'] = cytokine_linkages
         c['killing_linkages'] = killing_linkages
+        c['growth_type'] = growth_type
         self.tx_cells.append(c)
 
-    def add_cells(self, name, compartment, growth_type='Logistic'):
+    def add_cells(self, name, compartment, growth_type=None):
         """Add a type of non-therapeutic cell to the model (e.g. tumor or normal cells)."""
+
+        if growth_type == None:
+            growth_type = 'logistic'
+
         c = {}
         c['name'] = name
         c['compartment'] = compartment
@@ -467,8 +475,19 @@ class BioLayer:
                     b = sys.get_element_state('tx_cell', tx_cell['name'], compartment, tx_cell['daughter_state'])
                     if tx_cell['daughter_state'] == 'each':
                         b = a
-                    func = a*Constant('k_proliferation', 10)
-                    sys.add_relationship('proliferation', a, b, func)
+
+                    if tx_cell['growth_type'] == 'logistic':
+                        warn('CellTx BioLayer: Note that Tx cell logistic growth is currently only implemented for single state cells and default daughter state.')
+
+                        print("celltx BioLayer: Adding a logistic growth term the cells.")
+                        k_tx_prolif = Constant('k_tx_prolif', 10)
+                        k_tx_carrycap = Constant('k_tx_carrycap', 10)
+
+                        pro_func = k_tx_prolif * a * (1 - (1 / k_tx_carrycap) * a)
+                        sys.add_relationship('proliferation', a, a, pro_func)
+                    else:
+                        func = a*Constant('k_proliferation', 10)
+                        sys.add_relationship('proliferation', a, b, func)
 
             # state changes - for each compartment, join each state to relevant other states based on state_linkages
             for compartment in self.compartments:
