@@ -633,6 +633,7 @@ class ODELayer():
             for eq in self.equations:
                 display_func(eq)
         else:
+            # execute substitution
             substitute_eqs = []
             for eq in copy.deepcopy(self.equations):
                 X = eq.lhs.args[0]
