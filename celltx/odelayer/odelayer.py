@@ -130,8 +130,6 @@ class ODELayer():
         # Also generate starting conditions self.x0 (zeros for each species)
         self.x0 = np.zeros(len(self.species))
 
-        print('generated ode model with %i equations'%len(self.equations))
-
     def model(self, X, t, args):
         """
         Return the derivative of the system based on current state, desired timepoint, and param values.
