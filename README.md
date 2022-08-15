@@ -1,4 +1,6 @@
-# celltx
+# celltx (pre-release)
+
+**Note: This is a preliminary release of CellTx. Please contact the author for access to the latest full release.**
 
 > Cell Therapy: Cell CAD framework for dynamically constructing and evaluating multiscale models of cell therapies.
 
